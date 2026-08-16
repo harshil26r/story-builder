@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# builds
+dist/
+build/
+coverage/
+
+# local uploads (server fallback storage)
+server/uploads/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# vitest
+*.tsbuildinfo
