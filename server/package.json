@@ -1,0 +1,45 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Story Builder server — Express + Mongoose + Anthropic",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "node --check src/index.js && node --check src/app.js && echo 'server build ok'"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0",
+    "bcrypt": "^5.1.1",
+    "celebrate": "^15.0.3",
+    "cloudinary": "^2.5.1",
+    "connect-mongo": "^5.1.0",
+    "cookie-parser": "^1.4.7",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.5",
+    "epub-gen": "^0.1.0",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "express-session": "^1.18.1",
+    "helmet": "^8.0.0",
+    "joi": "^17.13.3",
+    "mongodb": "^6.10.0",
+    "mongoose": "^8.8.3",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.16",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0",
+    "pdf-lib": "^1.17.1",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "sanitize-html": "^2.13.1"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0",
+    "vitest": "^2.1.4"
+  }
+}
