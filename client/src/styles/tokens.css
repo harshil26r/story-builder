@@ -1,0 +1,140 @@
+@import 'tailwindcss';
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Story Builder — Design Tokens  (SPEC §4.6, .agents/skills/design-system)
+   Obsidian "Night Reading" default; opt-in cream "Paper/Ink" reader mode.
+   No raw hex outside this file (ACR-F-02).
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Surfaces — 3-layer elevation */
+  --bg-canvas: #0a0d14; /* slate-950 */
+  --surface-1: rgba(15, 23, 42, 0.9); /* 90% slate-900 */
+  --surface-1-border: rgba(30, 41, 59, 0.8); /* slate-800/80 */
+  --surface-2: rgba(30, 41, 59, 0.6); /* 60% slate-800 */
+  --surface-2-border: rgba(51, 65, 85, 0.6); /* slate-700/60 */
+
+  /* Text */
+  --text-primary: #e2e8f0; /* slate-200 */
+  --text-secondary: #94a3b8; /* slate-400 */
+  --text-muted: #64748b; /* slate-500 */
+
+  /* Accents */
+  --accent-primary: #818cf8; /* indigo-400 */
+  --accent-primary-active: #6366f1; /* indigo-500 */
+  --accent-choice: #38bdf8; /* sky-400 */
+  --accent-choice-fill: rgba(14, 165, 233, 0.2); /* sky-500/20 */
+
+  /* Role accents */
+  --role-protagonist: #10b981; /* emerald-500 */
+  --role-protagonist-bg: rgba(16, 185, 129, 0.2);
+  --role-antagonist: #fb7185; /* rose-400 */
+  --role-antagonist-bg: rgba(244, 63, 94, 0.2);
+  --role-supporting: #fbbf24; /* amber-400 */
+  --role-supporting-bg: rgba(245, 158, 11, 0.2);
+  --role-neutral: #94a3b8; /* slate-400 */
+  --role-neutral-bg: rgba(100, 116, 139, 0.5);
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Book/paper reader mode */
+  --paper-bg: #f5f0e6; /* cream page */
+  --paper-ink: #1f2430;
+  --paper-surface: rgba(245, 240, 230, 0.92);
+
+  /* Radii / shadows */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --shadow-glow: 0 0 24px rgba(99, 102, 241, 0.18);
+}
+
+/* ── App chrome defaults (obsidian) ───────────────────────────────────────── */
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)] antialiased;
+  font-family: var(--font-sans);
+}
+
+/* ── Paper/ink reader mode: data-reading-mode="paper" ─────────────────────── */
+[data-reading-mode='paper'] {
+  color-scheme: light;
+}
+[data-reading-mode='paper'] .book-page {
+  @apply bg-[color:var(--paper-bg)] text-[color:var(--paper-ink)];
+}
+
+/* ── prefers-color-scheme for app chrome (non-book UI) ────────────────────── */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+  }
+}
+
+/* ── Editorial typography helpers ─────────────────────────────────────────── */
+.editorial-body {
+  font-family: var(--font-serif);
+  @apply text-base leading-relaxed tracking-wide text-[color:var(--text-primary)];
+  max-width: 72ch;
+}
+
+.editorial-body[data-reading-mode='paper'] {
+  @apply text-[color:var(--paper-ink)];
+}
+
+.drop-cap::first-letter {
+  float: left;
+  font-size: 3.2em;
+  line-height: 0.85;
+  padding-right: 0.08em;
+  font-weight: 600;
+  font-family: var(--font-serif);
+}
+
+.page-measure {
+  max-width: 75ch;
+}
+
+/* ── Genre font presets (applied by data-genre attr on BookCover/ChapterPage) */
+[data-genre='fantasy'] {
+  font-family: 'Cinzel', var(--font-serif), serif;
+}
+[data-genre='noir'] {
+  font-family: 'Special Elite', var(--font-mono), monospace;
+}
+[data-genre='sci-fi'] {
+  font-family: 'Orbitron', var(--font-sans), sans-serif;
+}
+
+/* ── Focus rings (ACR-F-03) ───────────────────────────────────────────────── */
+:focus-visible {
+  outline: none;
+  @apply ring-2 ring-indigo-500/50;
+}
+
+/* Framer-motion PageFlip helpers */
+.perspective-3d {
+  perspective: 2000px;
+}
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Utility: skip link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 60;
+}
+.skip-link:focus-visible {
+  left: 0.5rem;
+  top: 0.5rem;
+  @apply bg-indigo-500 text-white px-4 py-2 rounded-md;
+}
