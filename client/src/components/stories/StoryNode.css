@@ -1,0 +1,61 @@
+/* StoryNode — later-phase visual styling (SCSS-free, token-based).
+   Placeholder scope so the import resolves; the branching-phase ticket
+   will flesh this out with the full node-card treatment. */
+
+.story-node {
+  position: relative;
+  border: 1px solid var(--surface-2-border);
+  border-left: 3px solid var(--surface-2-border);
+  background: var(--surface-1);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+  color: var(--text-primary);
+  transition:
+    border-color 200ms ease-out,
+    background-color 200ms ease-out,
+    box-shadow 200ms ease-out;
+}
+
+.story-node:hover {
+  border-color: var(--surface-1-border);
+  background: var(--surface-2);
+}
+
+.story-node.selected {
+  border-left-color: var(--accent-primary-active);
+  border-left-width: 4px;
+  background: color-mix(in srgb, var(--accent-primary-active) 10%, transparent);
+  box-shadow: var(--shadow-glow);
+}
+
+.story-node-title {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.story-node-content {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.start-node-badge {
+  display: inline-block;
+  margin-bottom: 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-choice);
+  background: var(--accent-choice-fill);
+  border: 1px solid color-mix(in srgb, var(--accent-choice) 30%, transparent);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
