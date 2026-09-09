@@ -1,0 +1,27 @@
+/* CanvasView — later-phase branching canvas.
+   Placeholder scope so the import resolves; token-based minimal grid
+   treatment so the region is a legible surface during earlier phases. */
+
+.canvas-view {
+  position: relative;
+  min-height: 420px;
+  border: 1px solid var(--surface-2-border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 20% 15%, color-mix(in srgb, var(--accent-primary) 6%, transparent), transparent 55%),
+    var(--surface-1);
+  overflow: hidden;
+}
+
+.canvas-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.canvas-nodes {
+  position: relative;
+  min-height: inherit;
+}

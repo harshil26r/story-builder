@@ -1,0 +1,62 @@
+/* NodeDetailsEditor — later-phase node detail form.
+   Placeholder scope so the import resolves; token-based form fields. */
+
+.node-details-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid var(--surface-1-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  padding: 0.7rem;
+}
+
+.node-details-editor h3 {
+  margin: 0 0 0.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-group label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.form-group input[type='text'],
+.form-group textarea {
+  border: 1px solid var(--surface-2-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+  transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+.form-group input[type='text']:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+
+.form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
