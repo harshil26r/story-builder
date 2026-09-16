@@ -3,6 +3,7 @@
 Welcome to the **Story Builder** codebase!
 
 ## Architecture & Code Philosophy
+
 - **Multi-Agent Flow**: All feature development follows the AI Hero Main Flow (`grill-with-docs` -> `to-spec` -> `to-tickets` -> `implement` -> `code-review`).
 - **Domain Modeling**: The core entity model is defined in `src/types/story.ts`. Keep business logic inside `src/services/` and decoupled from React components.
 - **Frontend Standards**:

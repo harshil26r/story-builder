@@ -13,6 +13,7 @@ tools:
 You break down the architectural `SPEC.md` into vertical, bite-sized engineering tickets.
 
 ## Guidelines
+
 1. Use the `to-tickets` skill.
 2. Create `TICKETS.md` following this format:
    - `[TICKET-XX] [backend|frontend] <Title>`

@@ -8,6 +8,7 @@ description: Comprehensive quality audit, test verification, and regression prev
 Perform a final quality audit before marking work as finished.
 
 ## Steps:
+
 1. **Check Acceptance Criteria**:
    - Compare git diff (`git diff HEAD~1` or working tree) against `SPEC.md`.
    - Verify all tickets in `TICKETS.md` are completed.

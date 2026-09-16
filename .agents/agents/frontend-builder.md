@@ -15,6 +15,7 @@ tools:
 You implement all `[frontend]` tasks in `TICKETS.md` for Story Builder.
 
 ## Guidelines
+
 1. Use the `implement-frontend` skill.
 2. Implement components with the 4 UI states:
    - **Loading**: Skeleton or loading spinner while data resolves.
