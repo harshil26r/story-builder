@@ -8,6 +8,7 @@ description: Synthesizes CONTEXT.md into an authoritative technical specificatio
 Convert high-level requirements into a binding technical blueprint.
 
 ## Steps
+
 1. **Read Inputs**: Review `CONTEXT.md` and relevant source files.
 2. **Define Contracts**:
    - TypeScript interfaces, types, and schema models.
@@ -16,9 +17,9 @@ Convert high-level requirements into a binding technical blueprint.
    - Component tree layout.
    - State variables, props interfaces, and event handlers.
    - Definition of the **4 UI States**:
-     - *Loading*: Visual state during asynchronous fetch/save.
-     - *Empty*: Visual state when no items/stories exist.
-     - *Error*: User-friendly message with recovery button.
-     - *Success*: Normal interactive view.
+     - _Loading_: Visual state during asynchronous fetch/save.
+     - _Empty_: Visual state when no items/stories exist.
+     - _Error_: User-friendly message with recovery button.
+     - _Success_: Normal interactive view.
 4. **Acceptance Criteria**: Formulate verifiable pass/fail rules.
 5. Save the output to `SPEC.md`.

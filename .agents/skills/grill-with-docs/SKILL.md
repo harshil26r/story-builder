@@ -8,6 +8,7 @@ description: Interrogates requirements against Story Builder docs and code, chal
 Use this skill whenever starting a new feature or task to ensure thorough pre-alignment.
 
 ## Steps
+
 1. **Analyze Requirements**: Read the user task and identify underspecified details (e.g., maximum branches, autosave behavior, data validation).
 2. **Consult Project Knowledge**: Read `docs/ARCHITECTURE.md` and check existing schemas in `src/types/story.ts`.
 3. **Draft `CONTEXT.md`**:

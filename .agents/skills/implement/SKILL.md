@@ -8,6 +8,7 @@ description: Executes backend tickets in TICKETS.md using Test-Driven Developmen
 Execute backend/service tickets with high reliability and zero regressions.
 
 ## Steps for Each Ticket:
+
 1. **Red (Failing Test)**:
    - Create or update a test in `src/tests/` specifying the expected behavior.
    - Run `npm test` and verify that the test fails for the expected reason.

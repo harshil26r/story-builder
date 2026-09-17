@@ -8,6 +8,7 @@ description: Decomposes SPEC.md into atomic, sequentially executable tickets in 
 Turn the technical specification into bite-sized, testable tasks.
 
 ## Steps
+
 1. **Analyze `SPEC.md`**: Identify independent pieces of work.
 2. **Segment by Layer**:
    - Tag with `[backend]` for types, models, state managers, and services.

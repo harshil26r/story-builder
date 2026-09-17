@@ -14,6 +14,7 @@ This skill guides agents in designing and implementing cohesive, aesthetically r
 Story Builder is an immersive authoring environment. It blends the focused darkness of modern developer tools with the editorial elegance of literary publications.
 
 ### Core Color Palette:
+
 - **Canvas Base**: `bg-slate-950` / `#0a0d14` (Deep obsidian canvas)
 - **Layer 1 Surface (Cards & Sidebars)**: `bg-slate-900/90` with subtle border `border-slate-800/80`
 - **Layer 2 Surface (Elevated Inputs & Nested Cards)**: `bg-slate-800/60` with `border-slate-700/60`
@@ -38,19 +39,23 @@ Story Builder is an immersive authoring environment. It blends the focused darkn
 ## 3. UI Component Standards
 
 ### Story Node Cards
+
 - Interactive hover transitions (`transition-all duration-200 ease-out hover:border-slate-600`).
 - Active state must feature an accent glow and distinct indicator (`border-l-4 border-l-indigo-500 bg-indigo-500/10`).
 - Display clear branch indicators and child count metadata.
 
 ### Branch Choice Buttons
+
 - Must look like consequential decisions, not generic utility buttons.
 - Distinct affordance: subtle gradient or accent left-border, clear destination node hint, smooth hover elevation (`hover:translate-x-1 transition-transform`).
 
 ### Character Cards
+
 - Color-coded role pill with an intuitive icon (`Shield` for protagonist, `Flame` for antagonist, `Sparkles` for supporting).
 - Avatar monogram circle with role-specific tint.
 
 ### Empty States
+
 - Never use a raw dashed gray box with plain text.
 - Include a relevant Lucide icon with a soft radial background glow.
 - Provide clear, encouraging microcopy that invites the author to take the next creative step.

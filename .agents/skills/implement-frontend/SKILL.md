@@ -8,6 +8,7 @@ description: Executes frontend tickets in TICKETS.md using component TDD and the
 Build robust, accessible, and responsive Story Builder UI components.
 
 ## Steps for Each UI Ticket:
+
 1. **Component Contract**:
    - Define TypeScript props interface, event handlers, and local state.
 2. **Component Test**:
