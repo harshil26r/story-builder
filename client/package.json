@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest run",
-    "lint": "oxlint",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -b",
+    "lint": "eslint src",
+    "format": "prettier --write src",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -15,6 +18,7 @@
     "lucide-react": "^1.45.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-hot-toast": "^2.6.1",
     "react-router-dom": "^7.18.3",
     "zustand": "^5.0.15"
   },
@@ -29,6 +33,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^2.1.9",
     "chai": "^5.3.3",
     "jsdom": "^30.0.1",
     "oxlint": "^1.81.0",
