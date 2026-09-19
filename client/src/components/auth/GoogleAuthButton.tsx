@@ -58,15 +58,15 @@ export function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
   return (
     <div className="mb-6">
       <div className="mb-6 flex items-center gap-3" aria-hidden="true">
-        <span className="h-px flex-1 bg-slate-800" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">or</span>
-        <span className="h-px flex-1 bg-slate-800" />
+        <span className="h-px flex-1 bg-slate-200" />
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">or</span>
+        <span className="h-px flex-1 bg-slate-200" />
       </div>
       <Button
         type="button"
         variant="outline"
         loading={busy}
-        className="w-full"
+        className="w-full border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm"
         onClick={handleClick}
         aria-label="Continue with Google"
       >
@@ -91,7 +91,10 @@ export function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
         Continue with Google
       </Button>
       {error && (
-        <ErrorAlert error={{ message: error, code: 'NOT_CONFIGURED' }} onRetry={() => setError(null)} />
+        <ErrorAlert
+          error={{ message: error, code: 'NOT_CONFIGURED' }}
+          onRetry={() => setError(null)}
+        />
       )}
     </div>
   );

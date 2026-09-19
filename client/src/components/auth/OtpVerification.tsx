@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/authStore';
-import { useToastStore } from '../../store/toastStore';
 import { AppError } from '../../types/domain';
 import { Button } from '../ui/Button';
-import { ErrorAlert } from '../ui/ErrorAlert';
 
 export interface OtpVerificationProps {
   email?: string;
@@ -27,15 +26,12 @@ export function OtpVerification({
 }: OtpVerificationProps) {
   const verifyOtp = useAuthStore((s) => s.verifyOtp);
   const sendOtp = useAuthStore((s) => s.sendOtp);
-  const authError = useAuthStore((s) => s.error);
   const clearError = useAuthStore((s) => s.clearError);
-  const pushToast = useToastStore((s) => s.push);
 
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [countdownSec, setCountdownSec] = useState(initialCountdownSec ?? RESEND_COOLDOWN);
   const [resendBusy, setResendBusy] = useState(false);
-  const [error, setError] = useState<AppError | null>(null);
 
   useEffect(() => {
     if (initialCountdownSec !== undefined) return;
@@ -48,7 +44,6 @@ export function OtpVerification({
   const handleSubmit = async () => {
     if (busy) return;
     clearError();
-    setError(null);
     setBusy(true);
     try {
       if (onSubmitOverride) {
@@ -56,11 +51,11 @@ export function OtpVerification({
       } else {
         await verifyOtp(email, code, purpose);
       }
-      pushToast('Email verified', 'success');
+      toast.success('Email verified. Welcome!');
       onSuccess?.();
     } catch (err: unknown) {
       const appErr = err instanceof AppError ? err : new AppError('UNKNOWN', String(err));
-      setError(appErr);
+      toast.error(appErr.message);
     } finally {
       setBusy(false);
     }
@@ -69,7 +64,6 @@ export function OtpVerification({
   const handleResend = async () => {
     if (resendBusy || countdownSec > 0) return;
     clearError();
-    setError(null);
     setResendBusy(true);
     try {
       if (onResendOverride) {
@@ -78,16 +72,14 @@ export function OtpVerification({
         await sendOtp(email, purpose);
       }
       setCountdownSec(RESEND_COOLDOWN);
-      pushToast('New code sent', 'info');
+      toast('New code sent.');
     } catch (err: unknown) {
       const appErr = err instanceof AppError ? err : new AppError('UNKNOWN', String(err));
-      setError(appErr);
+      toast.error(appErr.message);
     } finally {
       setResendBusy(false);
     }
   };
-
-  const displayError = error ?? authError;
 
   return (
     <form
@@ -99,13 +91,16 @@ export function OtpVerification({
       className="space-y-4"
     >
       {email ? (
-        <p className="text-sm text-slate-400">
-          We sent a code to <strong className="text-slate-200">{email}</strong>.
+        <p className="text-sm text-slate-600">
+          We sent a code to <strong className="text-slate-900">{email}</strong>.
         </p>
       ) : null}
 
       <div>
-        <label htmlFor="otp-code" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <label
+          htmlFor="otp-code"
+          className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-700"
+        >
           Verification code
         </label>
         <input
@@ -122,15 +117,13 @@ export function OtpVerification({
             e.preventDefault();
             if (text.length === 6) void handleSubmit();
           }}
-          className="w-full rounded-md border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-center text-2xl font-mono tracking-[0.5em] text-slate-200 transition-all duration-200 placeholder:text-slate-500 focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
+          className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-center text-2xl font-mono tracking-[0.5em] text-slate-900 transition-all duration-200 placeholder:text-slate-400 focus:border-indigo-600 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:outline-none"
           placeholder="••••••"
           aria-label="6-digit verification code"
         />
       </div>
 
-      {displayError && <ErrorAlert error={displayError} onRetry={clearError} />}
-
-      <Button type="submit" loading={busy} className="w-full" aria-label="Verify code">
+      <Button type="submit" loading={busy} className="w-full bg-slate-900 hover:bg-indigo-600 text-white" aria-label="Verify code">
         Verify
       </Button>
 

@@ -31,7 +31,9 @@ export function IndexTable({ chapters, onNavigate, currentOrder }: IndexTablePro
           <ListOrdered className="h-3.5 w-3.5" aria-hidden="true" />
           Contents
         </p>
-        <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-slate-100">Table of Contents</h2>
+        <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-slate-100">
+          Table of Contents
+        </h2>
         {chapters.length > 0 && (
           <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
             <Clock className="h-3 w-3" aria-hidden="true" />
@@ -60,12 +62,18 @@ export function IndexTable({ chapters, onNavigate, currentOrder }: IndexTablePro
                   }`}
                   data-testid={`index-row-${ch.order}`}
                 >
-                  <span className="w-8 shrink-0 text-center font-mono text-sm text-slate-500">{ch.order}</span>
+                  <span className="w-8 shrink-0 text-center font-mono text-sm text-slate-500">
+                    {ch.order}
+                  </span>
                   <span className="flex-1 min-w-0">
                     <span className="block truncate font-medium text-slate-200 group-hover:text-indigo-300">
                       {ch.title || `Chapter ${ch.order}`}
                     </span>
-                    {ch.summary && <span className="mt-0.5 block truncate text-xs text-slate-500">{ch.summary}</span>}
+                    {ch.summary && (
+                      <span className="mt-0.5 block truncate text-xs text-slate-500">
+                        {ch.summary}
+                      </span>
+                    )}
                   </span>
                 </button>
               </li>

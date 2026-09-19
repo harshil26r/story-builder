@@ -12,7 +12,11 @@ const DEFAULT_DISCLAIMER =
   'Characters, events, and dialogue are fictional. Any resemblance to real persons, ' +
   'living or dead, is purely coincidental.';
 
-export function DisclaimerPage({ customText, onContinue, title = 'Disclaimer' }: DisclaimerPageProps) {
+export function DisclaimerPage({
+  customText,
+  onContinue,
+  title = 'Disclaimer',
+}: DisclaimerPageProps) {
   const disclaimer = customText?.trim() || DEFAULT_DISCLAIMER;
   return (
     <div
@@ -22,7 +26,9 @@ export function DisclaimerPage({ customText, onContinue, title = 'Disclaimer' }:
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/15 ring-1 ring-indigo-500/30">
         <Sparkles className="h-6 w-6 text-indigo-400" aria-hidden="true" />
       </div>
-      <h2 className="mt-4 font-serif text-2xl font-semibold tracking-tight text-slate-100">{title}</h2>
+      <h2 className="mt-4 font-serif text-2xl font-semibold tracking-tight text-slate-100">
+        {title}
+      </h2>
       <p className="mt-4 text-sm leading-relaxed text-slate-300" data-testid="disclaimer-text">
         {disclaimer}
       </p>

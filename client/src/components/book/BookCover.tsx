@@ -47,10 +47,16 @@ export function BookCover({
         </div>
       )}
 
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-400" data-testid="cover-structure">
+      <p
+        className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-400"
+        data-testid="cover-structure"
+      >
         {structureType ?? 'story'}
       </p>
-      <h1 className="mt-2 max-w-md font-serif text-3xl font-semibold tracking-tight text-slate-100" data-testid="cover-title">
+      <h1
+        className="mt-2 max-w-md font-serif text-3xl font-semibold tracking-tight text-slate-100"
+        data-testid="cover-title"
+      >
         {title}
       </h1>
       {author ? (
