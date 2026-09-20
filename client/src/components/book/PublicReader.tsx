@@ -55,7 +55,11 @@ export function PublicReader() {
   if (status === 'loading') {
     return (
       <AppShell>
-        <div className="flex min-h-[50vh] items-center justify-center" role="status" aria-label="Loading story">
+        <div
+          className="flex min-h-[50vh] items-center justify-center"
+          role="status"
+          aria-label="Loading story"
+        >
           <Spinner size="lg" />
         </div>
       </AppShell>
@@ -73,7 +77,7 @@ export function PublicReader() {
   }
 
   const isBranching = story.structureType === 'branching';
-  const chapters = isBranching ? [] : (story as ChapteredStory).chapters ?? [];
+  const chapters = isBranching ? [] : ((story as ChapteredStory).chapters ?? []);
   const maxPage = Math.max(0, chapters.length - 1);
   const currentNode = isBranching ? story.nodes.find((n) => n._id === currentNodeId) : undefined;
 
@@ -125,7 +129,10 @@ export function PublicReader() {
             {isBranching ? (
               <div className="space-y-4">
                 {/* History breadcrumb */}
-                <div className="flex flex-wrap items-center gap-1.5 text-xs" data-testid="path-breadcrumb">
+                <div
+                  className="flex flex-wrap items-center gap-1.5 text-xs"
+                  data-testid="path-breadcrumb"
+                >
                   {branchPath.map((id, i) => {
                     const n = story.nodes.find((nd) => nd._id === id);
                     return (

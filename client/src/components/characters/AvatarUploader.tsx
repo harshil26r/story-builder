@@ -12,7 +12,12 @@ export interface AvatarUploaderProps {
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
-export function AvatarUploader({ currentUrl, characterName = '?', onUpload, onError }: AvatarUploaderProps) {
+export function AvatarUploader({
+  currentUrl,
+  characterName = '?',
+  onUpload,
+  onError,
+}: AvatarUploaderProps) {
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);

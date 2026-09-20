@@ -15,7 +15,13 @@ export interface PageFlipProps {
  * 3D page-turn wrapper. Desktop: perspective flip via framer-motion.
  * Mobile (<768px): degrades to a simple fade to avoid janky 3D.
  */
-export function PageFlip({ children, pageKey, direction = 'forward', onFlipEnd, index }: PageFlipProps) {
+export function PageFlip({
+  children,
+  pageKey,
+  direction = 'forward',
+  onFlipEnd,
+  index,
+}: PageFlipProps) {
   const [isCompact, setIsCompact] = useState(false);
   const motionRef = useRef<HTMLDivElement>(null);
 

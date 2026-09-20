@@ -5,8 +5,8 @@ import { useToastStore } from '../../store/toastStore';
 import type { Character } from '../../types/domain';
 import { CharacterForm } from './CharacterForm';
 import { CharacterRelationshipsEditor } from './CharacterRelationshipsEditor';
+import { CharacterGroupsEditor } from './CharacterGroupsEditor';
 import { AvatarUploader } from './AvatarUploader';
-import { AppShell } from '../ui/AppShell';
 import { Spinner } from '../ui/Spinner';
 import type { CharacterInput } from '../../types/api';
 
@@ -45,56 +45,55 @@ export function CharacterEditor() {
   };
 
   if (!isNew && characters.length > 0 && !character) {
-    return (
-      <AppShell>
-        <p className="text-slate-400">Character not found.</p>
-      </AppShell>
-    );
+    return <p className="text-slate-400">Character not found.</p>;
   }
 
   return (
-    <AppShell>
-      <div className="mx-auto max-w-2xl space-y-6 py-4">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-          {isNew ? 'New character' : character ? character.name : '...'}
-        </h1>
+    <div className="mx-auto max-w-2xl space-y-6 py-4">
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
+        {isNew ? 'New character' : character ? character.name : '...'}
+      </h1>
 
-        {!isNew && character && (
-          <AvatarUploader
-            currentUrl={character.avatarUrl}
-            characterName={character.name}
-            onUpload={(file) => uploadAvatar(character._id, file)}
+      {!isNew && character && (
+        <AvatarUploader
+          currentUrl={character.avatarUrl}
+          characterName={character.name}
+          onUpload={(file) => uploadAvatar(character._id, file)}
+        />
+      )}
+
+      {!isNew && !character ? (
+        <div className="flex justify-center py-10">
+          <Spinner />
+        </div>
+      ) : (
+        <div className="rounded-lg border border-slate-800/80 bg-slate-900/60 p-5">
+          <CharacterForm
+            initial={character ?? null}
+            onSave={handleSave}
+            onCancel={() => navigate('/characters')}
+            saving={saving}
           />
-        )}
-
-        {!isNew && !character ? (
-          <div className="flex justify-center py-10">
-            <Spinner />
-          </div>
-        ) : (
-          <div className="rounded-lg border border-slate-800/80 bg-slate-900/60 p-5">
-            <CharacterForm
-              initial={character ?? null}
-              onSave={handleSave}
-              onCancel={() => navigate('/characters')}
-              saving={saving}
-            />
-            {character && (
-              <div className="mt-6 border-t border-slate-800/80 pt-5">
-                <CharacterRelationshipsEditor
-                  characterId={character._id}
-                  available={characters}
-                  value={character.relationships}
-                  onChange={(rels) => {
-                    void update(character._id, { relationships: rels });
-                  }}
-                  lookup={(cid) => characters.find((c) => c._id === cid)}
-                />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </AppShell>
+          {character && (
+            <div className="mt-6 border-t border-slate-800/80 pt-5">
+              <CharacterRelationshipsEditor
+                characterId={character._id}
+                available={characters}
+                value={character.relationships}
+                onChange={(rels) => {
+                  void update(character._id, { relationships: rels });
+                }}
+                lookup={(cid) => characters.find((c) => c._id === cid)}
+              />
+            </div>
+          )}
+          {character && (
+            <div className="mt-6 border-t border-slate-800/80 pt-5">
+              <CharacterGroupsEditor characterId={character._id} groupIds={character.groupIds} />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

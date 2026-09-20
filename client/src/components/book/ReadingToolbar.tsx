@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  BookOpenText,
-  Download,
-  FileText,
-  Moon,
-  NotebookPen,
-  Sun,
-  Trash2,
-} from 'lucide-react';
+import { BookOpenText, Download, FileText, Moon, NotebookPen, Sun, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import type { ReaderMode, ReadingMode } from '../../store/uiStore';
@@ -48,7 +40,7 @@ export function ReadingToolbar({
 
   return (
     <div
-      className="sticky top-14 z-30 flex flex-wrap items-center gap-2 border-b border-slate-800/80 bg-slate-900/80 px-4 py-2 backdrop-blur-md"
+      className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-800/80 bg-slate-900/70 p-2 shadow-lg shadow-black/30 backdrop-blur-md"
       data-testid="reading-toolbar"
       data-reading-mode={readingMode}
     >
@@ -122,7 +114,11 @@ export function ReadingToolbar({
           disabled={exporting === 'pdf'}
           data-testid="export-pdf"
         >
-          {exporting === 'pdf' ? <Spinner size="sm" /> : <FileText className="h-3.5 w-3.5" aria-hidden="true" />}
+          {exporting === 'pdf' ? (
+            <Spinner size="sm" />
+          ) : (
+            <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
           PDF
         </Button>
         <Button
@@ -132,11 +128,21 @@ export function ReadingToolbar({
           disabled={exporting === 'epub'}
           data-testid="export-epub"
         >
-          {exporting === 'epub' ? <Spinner size="sm" /> : <Download className="h-3.5 w-3.5" aria-hidden="true" />}
+          {exporting === 'epub' ? (
+            <Spinner size="sm" />
+          ) : (
+            <Download className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
           EPUB
         </Button>
         {onDelete && (
-          <Button variant="danger" size="sm" onClick={onDelete} aria-label="Delete story" data-testid="delete-story">
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={onDelete}
+            aria-label="Delete story"
+            data-testid="delete-story"
+          >
             <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
           </Button>
         )}

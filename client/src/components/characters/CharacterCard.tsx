@@ -1,37 +1,70 @@
 import { Link } from 'react-router-dom';
 import { Copy, Pencil, Flame, Shield, Sparkles, User as UserIcon } from 'lucide-react';
-import type { Character, CharacterRole } from '../../types/domain';
+import type { Character, CharacterGroup, CharacterRole } from '../../types/domain';
 import { useCharacterStore } from '../../store/characterStore';
 import { confirm } from '../ui/confirm';
 
 export interface CharacterCardProps {
   character: Character;
+  groups?: CharacterGroup[];
   onDelete?: (character: Character) => void;
   onDuplicate?: (character: Character) => void;
 }
 
-const ROLE_STYLES: Record<CharacterRole, { label: string; cls: string; icon: typeof Shield; iconCls: string }> = {
-  protagonist: { label: 'Protagonist', cls: 'border-emerald-500/30 bg-emerald-500/20 text-emerald-400', icon: Shield, iconCls: 'text-emerald-400' },
-  antagonist: { label: 'Antagonist', cls: 'border-rose-500/30 bg-rose-500/20 text-rose-400', icon: Flame, iconCls: 'text-rose-400' },
-  supporting: { label: 'Supporting', cls: 'border-amber-500/30 bg-amber-500/20 text-amber-400', icon: Sparkles, iconCls: 'text-amber-400' },
-  side: { label: 'Side', cls: 'border-slate-600/40 bg-slate-700/50 text-slate-300', icon: Sparkles, iconCls: 'text-slate-300' },
-  mentor: { label: 'Mentor', cls: 'border-sky-500/30 bg-sky-500/20 text-sky-400', icon: Sparkles, iconCls: 'text-sky-400' },
+const ROLE_STYLES: Record<
+  CharacterRole,
+  { label: string; cls: string; icon: typeof Shield; iconCls: string }
+> = {
+  protagonist: {
+    label: 'Protagonist',
+    cls: 'border-emerald-500/30 bg-emerald-500/20 text-emerald-400',
+    icon: Shield,
+    iconCls: 'text-emerald-400',
+  },
+  antagonist: {
+    label: 'Antagonist',
+    cls: 'border-rose-500/30 bg-rose-500/20 text-rose-400',
+    icon: Flame,
+    iconCls: 'text-rose-400',
+  },
+  supporting: {
+    label: 'Supporting',
+    cls: 'border-amber-500/30 bg-amber-500/20 text-amber-400',
+    icon: Sparkles,
+    iconCls: 'text-amber-400',
+  },
+  side: {
+    label: 'Side',
+    cls: 'border-slate-600/40 bg-slate-700/50 text-slate-300',
+    icon: Sparkles,
+    iconCls: 'text-slate-300',
+  },
+  mentor: {
+    label: 'Mentor',
+    cls: 'border-sky-500/30 bg-sky-500/20 text-sky-400',
+    icon: Sparkles,
+    iconCls: 'text-sky-400',
+  },
 };
 
 export function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('') || '?';
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? '')
+      .join('') || '?'
+  );
 }
 
-export function CharacterCard({ character, onDelete, onDuplicate }: CharacterCardProps) {
+export function CharacterCard({ character, groups, onDelete, onDuplicate }: CharacterCardProps) {
   const remove = useCharacterStore((s) => s.remove);
   const duplicate = useCharacterStore((s) => s.duplicate);
   const role = ROLE_STYLES[character.role] ?? ROLE_STYLES.supporting;
   const RoleIcon = role.icon;
+
+  const charGroups = groups?.filter((g) => character.groupIds.includes(g._id)) ?? [];
 
   const handleDelete = () => {
     void confirm({
@@ -74,10 +107,14 @@ export function CharacterCard({ character, onDelete, onDuplicate }: CharacterCar
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="truncate font-semibold tracking-tight text-slate-100">{character.name}</h3>
+            <h3 className="truncate font-display text-lg leading-snug text-[color:var(--ink-warm)]">
+              {character.name}
+            </h3>
           </div>
           <div className="mt-1">
-            <span className={`inline-flex items-center gap-1 rounded-full border py-0.5 pl-1.5 pr-2 text-xs ${role.cls}`}>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full border py-0.5 pl-1.5 pr-2 text-xs ${role.cls}`}
+            >
               <RoleIcon className="h-3 w-3" aria-hidden="true" />
               {role.label}
             </span>
@@ -108,16 +145,20 @@ export function CharacterCard({ character, onDelete, onDuplicate }: CharacterCar
         </div>
       </div>
 
-      <p className="mt-3 line-clamp-2 text-sm text-slate-400">{character.backstory || character.appearance || 'No description yet.'}</p>
+      <p className="mt-3 line-clamp-2 text-sm text-slate-400">
+        {character.backstory || character.appearance || 'No description yet.'}
+      </p>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
-        {character.personality.slice(0, 3).map((tag) => (
+        {(character.personality ?? []).slice(0, 3).map((tag) => (
           <span key={tag} className="rounded bg-slate-800/70 px-1.5 py-0.5 text-xs text-slate-400">
             {tag}
           </span>
         ))}
-        {character.personality.length > 3 && (
-          <span className="rounded px-1 py-0.5 text-xs text-slate-500">+{character.personality.length - 3}</span>
+        {(character.personality?.length ?? 0) > 3 && (
+          <span className="rounded px-1 py-0.5 text-xs text-slate-500">
+            +{character.personality.length - 3}
+          </span>
         )}
       </div>
 
@@ -126,6 +167,27 @@ export function CharacterCard({ character, onDelete, onDuplicate }: CharacterCar
           <UserIcon className="h-3 w-3" aria-hidden="true" />
           Secret: {character.secretTrait}
         </p>
+      )}
+
+      {charGroups.length > 0 && (
+        <div
+          className="mt-3 flex flex-wrap items-center gap-1.5"
+          data-testid="character-group-chips"
+        >
+          {charGroups.slice(0, 3).map((g) => (
+            <span
+              key={g._id}
+              className="rounded-full border border-slate-700/60 bg-slate-800/40 px-1.5 py-0.5 text-xs text-slate-300"
+            >
+              {g.name}
+            </span>
+          ))}
+          {charGroups.length > 3 && (
+            <span className="rounded-full px-1 py-0.5 text-xs text-slate-500">
+              +{charGroups.length - 3}
+            </span>
+          )}
+        </div>
       )}
     </article>
   );

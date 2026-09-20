@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { GitBranch, Plus, Route, Trash2, X } from 'lucide-react';
+import { GitBranch, Plus, Route, Sparkles, Trash2, X } from 'lucide-react';
 import type { ID } from '../../types/domain';
 import { useBranchStore, selectNodeById, countChildren } from '../../store/branchStore';
 import { AsyncState } from '../ui/AsyncState';
 import { SkeletonCard } from '../ui/Skeleton';
 import { Button } from '../ui/Button';
+import { ErrorAlert } from '../ui/ErrorAlert';
 import { ChapterPage } from '../book/ChapterPage';
 
 export interface BranchingViewProps {
@@ -17,7 +18,11 @@ export interface BranchingViewProps {
  * Branching graph editor: node cards + choice edges. Works for author editing
  * and (read-only when isPublic) inside BookReader / PublicReader.
  */
-export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'night' }: BranchingViewProps) {
+export function BranchingView({
+  storyId,
+  isPublic = false,
+  dataReadingMode = 'night',
+}: BranchingViewProps) {
   const nodes = useBranchStore((s) => s.nodes);
   const edges = useBranchStore((s) => s.edges);
   const status = useBranchStore((s) => s.status);
@@ -31,6 +36,7 @@ export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'ni
   const addChoice = useBranchStore((s) => s.addChoice);
   const removeChoice = useBranchStore((s) => s.removeChoice);
   const generateNode = useBranchStore((s) => s.generateNode);
+  const generation = useBranchStore((s) => s.generation);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -38,7 +44,8 @@ export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'ni
 
   const selected = selectedId ? selectNodeById(nodes, selectedId) : undefined;
   const childCount = (id: ID) => countChildren(nodes, id);
-  const targetName = (id: ID | null) => (id ? selectNodeById(nodes, id)?.title ?? '(deleted)' : '(dangling)');
+  const targetName = (id: ID | null) =>
+    id ? (selectNodeById(nodes, id)?.title ?? '(deleted)') : '(dangling)';
 
   const handleAddNode = () => {
     void addNode(storyId, selectedId);
@@ -70,7 +77,9 @@ export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'ni
       <GitBranch className="h-10 w-10 text-indigo-400" aria-hidden="true" />
       <div>
         <p className="font-semibold text-slate-200">No branches yet</p>
-        <p className="text-sm text-slate-400">Create the first scene node of your choose-your-path story.</p>
+        <p className="text-sm text-slate-400">
+          Create the first scene node of your choose-your-path story.
+        </p>
       </div>
       {!isPublic && (
         <Button variant="primary" onClick={handleAddNode} data-testid="branch-add-first">
@@ -142,7 +151,9 @@ export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'ni
                         ending
                       </span>
                     ) : null}
-                    <h4 className="mt-1 truncate font-medium text-slate-100">{node.title || 'Untitled node'}</h4>
+                    <h4 className="mt-1 truncate font-medium text-slate-100">
+                      {node.title || 'Untitled node'}
+                    </h4>
                   </div>
                   {!isPublic && (
                     <button
@@ -159,7 +170,9 @@ export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'ni
                   )}
                 </div>
 
-                <p className="mt-2 line-clamp-3 text-xs text-slate-400">{node.content || 'No content yet.'}</p>
+                <p className="mt-2 line-clamp-3 text-xs text-slate-400">
+                  {node.content || 'No content yet.'}
+                </p>
 
                 <div className="mt-3 space-y-1">
                   {node.choices.map((ch) => {
@@ -204,12 +217,19 @@ export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'ni
 
         {/* Selected node detail editor */}
         {selected && !isPublic && (
-          <section className="rounded-lg border border-slate-700/60 bg-slate-900/70 p-5" aria-label="Node detail" data-testid="branch-detail">
+          <section
+            className="rounded-lg border border-slate-700/60 bg-slate-900/70 p-5"
+            aria-label="Node detail"
+            data-testid="branch-detail"
+          >
             <h3 className="font-semibold text-slate-100">{selected.title || 'Untitled node'}</h3>
 
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label htmlFor="branch-title" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <label
+                  htmlFor="branch-title"
+                  className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400"
+                >
                   Title
                 </label>
                 <input
@@ -226,7 +246,10 @@ export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'ni
               </div>
             </div>
             <div className="mt-3">
-              <label htmlFor="branch-content" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <label
+                htmlFor="branch-content"
+                className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-400"
+              >
                 Content
               </label>
               <textarea
@@ -246,7 +269,12 @@ export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'ni
                 aria-label="New choice label"
                 className="w-48 rounded-md border border-slate-700/60 bg-slate-800/60 px-3 py-1.5 text-sm text-slate-200 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
               />
-              <Button variant="secondary" size="sm" onClick={handleAddChoice} disabled={!choiceLabel.trim()}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleAddChoice}
+                disabled={!choiceLabel.trim()}
+              >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 Add choice
               </Button>
@@ -258,11 +286,41 @@ export function BranchingView({ storyId, isPublic = false, dataReadingMode = 'ni
                   variant="ghost"
                   size="sm"
                   onClick={() => void generateNode(storyId, selectedId)}
+                  disabled={generation.phase === 'streaming'}
+                  loading={generation.phase === 'streaming'}
                   data-testid="branch-generate"
                 >
                   <GitBranch className="h-3.5 w-3.5" aria-hidden="true" />
-                  Generate continuation (AI)
+                  {generation.phase === 'streaming' ? 'Generating…' : 'Generate continuation (AI)'}
                 </Button>
+
+                {generation.phase === 'streaming' && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    aria-label="Generating continuation"
+                    data-testid="branch-generate-stream"
+                    className="mt-3 rounded-md border border-indigo-500/30 bg-indigo-500/10 p-3 transition-all duration-200 ease-out"
+                  >
+                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-300">
+                      <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                      Generating…
+                    </p>
+                    {generation.streamText && (
+                      <p className="mt-2 whitespace-pre-wrap font-serif text-sm leading-relaxed text-slate-200">
+                        {generation.streamText}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {generation.phase === 'error' && generation.error && (
+                  <ErrorAlert
+                    error={generation.error}
+                    onRetry={() => void generateNode(storyId, selectedId)}
+                    className="mt-3"
+                  />
+                )}
               </div>
             )}
           </section>
