@@ -14,7 +14,7 @@ export const CharacterManager: React.FC<CharacterManagerProps> = ({ characters }
         <p>No characters added yet.</p>
       ) : (
         <ul className="character-list">
-          {characters.map(char => (
+          {characters.map((char) => (
             <li key={char.id} className="character-item">
               <strong>{char.name}</strong>
               <p>{char.description}</p>

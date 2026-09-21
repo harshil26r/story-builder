@@ -41,7 +41,9 @@
   color: var(--text-primary);
   padding: 0.4rem 0.5rem;
   font-size: 0.85rem;
-  transition: border-color 200ms ease-out, box-shadow 200ms ease-out;
+  transition:
+    border-color 200ms ease-out,
+    box-shadow 200ms ease-out;
 }
 
 .form-group input[type='text']:focus,

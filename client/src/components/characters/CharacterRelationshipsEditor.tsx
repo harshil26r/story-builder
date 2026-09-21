@@ -61,7 +61,10 @@ export function CharacterRelationshipsEditor({
       {value.length > 0 && (
         <ul className="space-y-1.5">
           {value.map((rel) => (
-            <li key={rel.characterId} className="flex items-center justify-between rounded-md border border-slate-700/60 bg-slate-800/40 px-3 py-2 text-sm">
+            <li
+              key={rel.characterId}
+              className="flex items-center justify-between rounded-md border border-slate-700/60 bg-slate-800/40 px-3 py-2 text-sm"
+            >
               <span className="text-slate-200">
                 {nameOf(rel.characterId)}{' '}
                 <span className="text-xs text-indigo-300">({rel.relationType})</span>
@@ -92,7 +95,9 @@ export function CharacterRelationshipsEditor({
             {candidates
               .filter((c) => !value.some((v) => v.characterId === c._id))
               .map((c) => (
-                <option key={c._id} value={c._id}>{c.name}</option>
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
               ))}
           </select>
           <select
@@ -101,7 +106,11 @@ export function CharacterRelationshipsEditor({
             aria-label="Relationship type"
             className="rounded-md border border-slate-700/60 bg-slate-800/60 px-2 py-1.5 text-sm text-slate-200 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none"
           >
-            {RELATION_TYPES.map((rt) => <option key={rt} value={rt}>{rt}</option>)}
+            {RELATION_TYPES.map((rt) => (
+              <option key={rt} value={rt}>
+                {rt}
+              </option>
+            ))}
           </select>
           <Button type="button" size="sm" variant="secondary" onClick={add} disabled={!selected}>
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />

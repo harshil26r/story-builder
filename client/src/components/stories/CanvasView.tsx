@@ -22,7 +22,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ nodes, links, onNodeSele
   // Very basic positioning for mock visual display.
   // In a real app, nodes would have x/y coordinates.
   const getNodePos = (index: number) => {
-    const x = 100 + (index * 200);
+    const x = 100 + index * 200;
     const y = 100 + (index % 2 === 0 ? 0 : 100);
     return { x, y };
   };
@@ -31,8 +31,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ nodes, links, onNodeSele
     <div className="canvas-view" role="region" aria-label="Story Canvas">
       <svg className="canvas-svg">
         {links.map((link) => {
-          const sourceIndex = nodes.findIndex(n => n.id === link.sourceNodeId);
-          const targetIndex = nodes.findIndex(n => n.id === link.targetNodeId);
+          const sourceIndex = nodes.findIndex((n) => n.id === link.sourceNodeId);
+          const targetIndex = nodes.findIndex((n) => n.id === link.targetNodeId);
           if (sourceIndex === -1 || targetIndex === -1) return null;
 
           const startPos = getNodePos(sourceIndex);
@@ -54,8 +54,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({ nodes, links, onNodeSele
         {nodes.map((node, i) => {
           const pos = getNodePos(i);
           return (
-            <div 
-              key={node.id} 
+            <div
+              key={node.id}
               style={{ position: 'absolute', left: pos.x, top: pos.y, width: '150px' }}
             >
               <StoryNode

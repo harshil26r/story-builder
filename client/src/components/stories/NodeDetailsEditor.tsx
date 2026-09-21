@@ -12,25 +12,15 @@ export const NodeDetailsEditor: React.FC<NodeDetailsEditorProps> = ({ node }) =>
       <h3>Edit Node</h3>
       <div className="form-group">
         <label htmlFor="node-title">Title</label>
-        <input 
-          id="node-title"
-          type="text" 
-          defaultValue={node.title} 
-        />
+        <input id="node-title" type="text" defaultValue={node.title} />
       </div>
       <div className="form-group">
         <label htmlFor="node-content">Content</label>
-        <textarea 
-          id="node-content"
-          defaultValue={node.content} 
-        />
+        <textarea id="node-content" defaultValue={node.content} />
       </div>
       <div className="form-group checkbox">
         <label>
-          <input 
-            type="checkbox" 
-            defaultChecked={node.isStartNode} 
-          />
+          <input type="checkbox" defaultChecked={node.isStartNode} />
           Is Start Node
         </label>
       </div>
