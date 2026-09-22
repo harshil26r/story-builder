@@ -18,7 +18,9 @@ export function CompleteStep({ summary, wordCount }: CompleteStepProps) {
         <BookOpen className="h-8 w-8 text-emerald-400" aria-hidden="true" />
       </div>
       <div>
-        <h3 className="font-serif text-2xl font-semibold tracking-tight text-slate-100">Your book is ready</h3>
+        <h3 className="font-serif text-2xl font-semibold tracking-tight text-slate-100">
+          Your book is ready
+        </h3>
         <p className="mt-1 text-sm text-slate-400">Open it to read, edit, and share.</p>
       </div>
 

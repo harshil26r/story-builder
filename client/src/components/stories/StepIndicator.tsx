@@ -7,7 +7,11 @@ export interface StepIndicatorProps {
 
 export function StepIndicator({ step, labels }: StepIndicatorProps) {
   return (
-    <ol className="flex items-center gap-1" aria-label="Story wizard steps" data-testid="step-indicator">
+    <ol
+      className="flex items-center gap-1"
+      aria-label="Story wizard steps"
+      data-testid="step-indicator"
+    >
       {labels.map((label, i) => {
         const idx = i + 1;
         const active = idx === step;

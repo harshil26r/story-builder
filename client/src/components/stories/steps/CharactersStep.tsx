@@ -1,9 +1,11 @@
-import { Users } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import type { Character, ID } from '../../../types/domain';
 import { useCharacterStore } from '../../../store/characterStore';
 import { Spinner } from '../../ui/Spinner';
 import { ErrorAlert } from '../../ui/ErrorAlert';
+import { Button } from '../../ui/Button';
 import { initials } from '../../characters/CharacterCard';
 
 export interface CharactersStepProps {
@@ -23,7 +25,9 @@ export function CharactersStep({ characterIds, onChange }: CharactersStepProps) 
   }, [characters.length, fetchCharacters]);
 
   const toggle = (id: ID) => {
-    onChange(characterIds.includes(id) ? characterIds.filter((c) => c !== id) : [...characterIds, id]);
+    onChange(
+      characterIds.includes(id) ? characterIds.filter((c) => c !== id) : [...characterIds, id],
+    );
   };
 
   if (status === 'loading' || (status === 'idle' && characters.length === 0)) {
@@ -40,7 +44,10 @@ export function CharactersStep({ characterIds, onChange }: CharactersStepProps) 
 
   if (characters.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 py-10 text-center" data-testid="characters-empty">
+      <div
+        className="flex flex-col items-center gap-3 py-10 text-center"
+        data-testid="characters-empty"
+      >
         <Users className="h-10 w-10 text-slate-600" aria-hidden="true" />
         <div>
           <p className="font-semibold text-slate-200">No characters yet</p>
@@ -48,13 +55,18 @@ export function CharactersStep({ characterIds, onChange }: CharactersStepProps) 
             Add characters first so the AI can weave them into your story.
           </p>
         </div>
+        <Link to="/characters" data-testid="characters-create-cta">
+          <Button size="sm" leftIcon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />}>
+            Create characters
+          </Button>
+        </Link>
       </div>
     );
   }
 
   return (
     <div className="space-y-3" data-testid="characters-step">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">
         Choose characters ({characterIds.length} selected)
       </p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -66,22 +78,26 @@ export function CharactersStep({ characterIds, onChange }: CharactersStepProps) 
               type="button"
               onClick={() => toggle(c._id)}
               aria-pressed={active}
-              className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-all duration-200 ease-out focus:ring-2 focus:ring-indigo-500/50 focus:outline-none ${
+              className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 ease-out focus:ring-2 focus:ring-indigo-500/30 focus:outline-none ${
                 active
-                  ? 'border-indigo-500/60 bg-indigo-500/10 shadow-[0_0_16px_rgba(99,102,241,0.15)]'
-                  : 'border-slate-700/60 bg-slate-900/50 hover:border-slate-600'
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-950 shadow-sm ring-1 ring-indigo-600/30'
+                  : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 shadow-xs'
               }`}
               data-testid={`character-toggle-${c._id}`}
             >
               <span
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ring-1 ${
-                  active ? 'bg-indigo-500/20 text-indigo-300 ring-indigo-500/40' : 'bg-slate-800 text-slate-300 ring-slate-700'
+                  active
+                    ? 'bg-indigo-600 text-white ring-indigo-600'
+                    : 'bg-slate-100 text-slate-700 ring-slate-200'
                 }`}
               >
                 {initials(c.name)}
               </span>
               <span className="min-w-0">
-                <span className={`block truncate text-sm font-medium ${active ? 'text-indigo-200' : 'text-slate-200'}`}>
+                <span
+                  className={`block truncate text-sm font-semibold ${active ? 'text-indigo-950' : 'text-slate-900'}`}
+                >
                   {c.name}
                 </span>
                 {c.isTemplate && <span className="text-xs text-slate-500">template</span>}

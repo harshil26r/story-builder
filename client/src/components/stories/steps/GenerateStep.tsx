@@ -21,7 +21,7 @@ export function GenerateStep({ storyId, onDone, dataReadingMode = 'night' }: Gen
   const streaming = job.status === 'streaming';
   const hasSnapshot = job.snapshot !== null;
 
-  const begin = () => void start('chapter', storyId, { chapterIndex: 0 });
+  const begin = () => void start('chapter', storyId, { storyId, chapterIndex: 1 });
 
   return (
     <div className="space-y-4" data-testid="generate-step">
@@ -68,7 +68,9 @@ export function GenerateStep({ storyId, onDone, dataReadingMode = 'night' }: Gen
           data-testid="generation-progress"
         >
           <Spinner size="sm" />
-          <span aria-live="polite">Streaming… {job.fullText.length.toLocaleString()} characters</span>
+          <span aria-live="polite">
+            Streaming… {job.fullText.length.toLocaleString()} characters
+          </span>
         </div>
       )}
 
