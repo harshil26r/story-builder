@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
-import { Spinner } from "./Spinner";
-import { ErrorAlert } from "./ErrorAlert";
-import { EmptyState } from "./EmptyState";
-import type { AsyncStatus } from "../../types/domain";
+import type { ReactNode } from 'react';
+import { Spinner } from './Spinner';
+import { ErrorAlert } from './ErrorAlert';
+import { EmptyState } from './EmptyState';
+import type { AsyncStatus } from '../../types/domain';
 
 export interface AsyncStateProps {
   status: AsyncStatus;
@@ -34,21 +34,21 @@ export function AsyncState({
   children,
   label,
 }: AsyncStateProps) {
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
-      <div aria-busy="true" aria-label={label ?? "Loading"} role="status">
+      <div aria-busy="true" aria-label={label ?? 'Loading'} role="status">
         {skeleton ?? (
           <div className="flex items-center justify-center py-16">
-            <Spinner size="lg" label={label ?? "Loading"} />
+            <Spinner size="lg" label={label ?? 'Loading'} />
           </div>
         )}
       </div>
     );
   }
-  if (status === "empty") {
+  if (status === 'empty') {
     return <>{empty ?? <EmptyState />}</>;
   }
-  if (status === "error") {
+  if (status === 'error') {
     if (errorNode) return <>{errorNode}</>;
     return (
       <ErrorAlert
@@ -59,7 +59,7 @@ export function AsyncState({
                 message: error.message,
                 code: (error as { code?: string }).code,
               }
-            : new Error("An unexpected error occurred.")
+            : new Error('An unexpected error occurred.')
         }
         onRetry={onRetry}
       />

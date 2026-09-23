@@ -13,7 +13,7 @@ export const StoryLink: React.FC<StoryLinkProps> = ({ link, startX, startY, endX
   // Simple straight line or bezier curve between points
   const midX = (startX + endX) / 2;
   const midY = (startY + endY) / 2;
-  
+
   return (
     <g className="story-link">
       <path
