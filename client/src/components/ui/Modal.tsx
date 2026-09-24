@@ -96,7 +96,9 @@ export function Modal({ open, onClose, title, children, footer, width = 'md' }: 
         )}
         <div className="px-5 py-4">{children}</div>
         {footer && (
-          <div className="flex justify-end gap-2 border-t border-slate-800/80 px-5 py-3">{footer}</div>
+          <div className="flex justify-end gap-2 border-t border-slate-800/80 px-5 py-3">
+            {footer}
+          </div>
         )}
       </div>
     </div>,

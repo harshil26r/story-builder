@@ -21,7 +21,10 @@ export function EmptyState({
       data-testid="empty-state"
     >
       <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-2xl" aria-hidden="true" />
+        <div
+          className="absolute inset-0 rounded-full bg-indigo-500/20 blur-2xl"
+          aria-hidden="true"
+        />
         <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-slate-800/60 ring-1 ring-slate-700/60">
           <Icon className="h-7 w-7 text-indigo-400" aria-hidden="true" />
         </div>

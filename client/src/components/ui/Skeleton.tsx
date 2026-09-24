@@ -17,7 +17,12 @@ export function Skeleton({ className = '', lines = 3, children }: SkeletonProps)
     );
   }
   return (
-    <div className={`space-y-3 ${className}`} data-testid="skeleton" aria-hidden="true" role="presentation">
+    <div
+      className={`space-y-3 ${className}`}
+      data-testid="skeleton"
+      aria-hidden="true"
+      role="presentation"
+    >
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
@@ -32,7 +37,11 @@ export function Skeleton({ className = '', lines = 3, children }: SkeletonProps)
 /** Card-shaped skeleton placeholder for grids. */
 export function SkeletonCard({ className = '' }: { className?: string }) {
   return (
-    <div className={`rounded-lg border border-slate-800/80 bg-slate-900/60 p-5 ${className}`} data-testid="skeleton-card" aria-hidden="true">
+    <div
+      className={`rounded-lg border border-slate-800/80 bg-slate-900/60 p-5 ${className}`}
+      data-testid="skeleton-card"
+      aria-hidden="true"
+    >
       <div className="mb-4 flex items-center gap-3">
         <div className="h-10 w-10 animate-pulse rounded-full bg-slate-700/50" />
         <div className="flex-1 space-y-2">

@@ -31,7 +31,12 @@ export function ConfirmDialog({
         <Button variant="ghost" onClick={onCancel} disabled={loading}>
           {cancelLabel}
         </Button>
-        <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} loading={loading} aria-label={confirmLabel}>
+        <Button
+          variant={danger ? 'danger' : 'primary'}
+          onClick={onConfirm}
+          loading={loading}
+          aria-label={confirmLabel}
+        >
           {confirmLabel}
         </Button>
       </div>
