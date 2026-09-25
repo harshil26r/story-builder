@@ -4,6 +4,11 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { bootstrap } from './services/bootstrap';
+import { useAuthStore } from './store/authStore';
+
+if (import.meta.env.DEV) {
+  (window as unknown as { __useAuthStore?: typeof useAuthStore }).__useAuthStore = useAuthStore;
+}
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Root container #root not found');
