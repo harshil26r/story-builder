@@ -11,23 +11,30 @@ interface GenerationState {
     status: RowStatus;
     storyId: ID | null;
     chapterIndex: number | null;
+    route: 'chapter' | 'node' | 'polish' | 'regenerate' | 'continue' | null;
     fullText: string;
     latestSummary: string | null;
     snapshot: { jobId: string; fullTextSoFar: string } | null;
     error: AppError | null;
   };
-  start(route: 'chapter' | 'node' | 'polish' | 'regenerate' | 'continue', storyId: ID, payload: unknown): Promise<void>;
+  start(
+    route: 'chapter' | 'node' | 'polish' | 'regenerate' | 'continue',
+    storyId: ID,
+    payload: unknown,
+  ): Promise<void>;
   resume(): Promise<void>;
   abort(): void;
   reset(): void;
 }
 
-const ROUTE_PATHS: Record<string, string> = {
-  chapter: '/api/ai/generate-chapter',
-  node: '/api/ai/generate-node',
-  polish: '/api/ai/polish-draft',
-  regenerate: '/api/ai/regenerate',
-  continue: '/api/ai/continue',
+// Path builders — regenerate/continue are nested under the story resource
+// (SPEC §3.4 / TICKET-57), so they need the story id in the path.
+const ROUTE_PATHS: Record<string, (storyId: string) => string> = {
+  chapter: () => '/api/ai/generate-chapter',
+  node: () => '/api/ai/generate-node',
+  polish: () => '/api/ai/polish-draft',
+  regenerate: (storyId) => `/api/stories/${storyId}/regenerate-chapter`,
+  continue: (storyId) => `/api/stories/${storyId}/continue`,
 };
 
 let controller: AbortController | null = null;
@@ -37,6 +44,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     status: 'idle',
     storyId: null,
     chapterIndex: null,
+    route: null,
     fullText: '',
     latestSummary: null,
     snapshot: null,
@@ -51,6 +59,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         status: 'streaming',
         storyId,
         chapterIndex: (payload as { chapterIndex?: number })?.chapterIndex ?? null,
+        route,
         fullText: '',
         latestSummary: null,
         snapshot: null,
@@ -58,18 +67,19 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       },
     });
 
-    const path = ROUTE_PATHS[route];
+    const path = ROUTE_PATHS[route](String(storyId));
     try {
       await streamSSE(
         path,
         payload,
         {
           onDocStart: () => set({}),
-          onDelta: (text) =>
-            set((s) => ({ job: { ...s.job, fullText: s.job.fullText + text } })),
+          onDelta: (text) => set((s) => ({ job: { ...s.job, fullText: s.job.fullText + text } })),
           onSummary: (summary) => set((s) => ({ job: { ...s.job, latestSummary: summary } })),
           onSnapshot: (snap: SnapshotEvent) =>
-            set((s) => ({ job: { ...s.job, snapshot: { jobId: snap.jobId, fullTextSoFar: snap.fullTextSoFar } } })),
+            set((s) => ({
+              job: { ...s.job, snapshot: { jobId: snap.jobId, fullTextSoFar: snap.fullTextSoFar } },
+            })),
           onDone: () => {
             set((s) => ({ job: { ...s.job, status: 'done' } }));
             useToastStore.getState().push('Generation complete', 'success');
@@ -99,7 +109,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       chapterIndex: job.chapterIndex,
       resumeGenerationId: job.snapshot.jobId,
     };
-    await get().start('chapter', job.storyId, payload);
+    await get().start(job.route ?? 'chapter', job.storyId, payload);
   },
 
   abort: () => {
@@ -107,7 +117,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       controller.abort();
       controller = null;
     }
-    set((s) => ({ job: { ...s.job, status: s.job.status === 'streaming' ? 'idle' : s.job.status } }));
+    set((s) => ({
+      job: { ...s.job, status: s.job.status === 'streaming' ? 'idle' : s.job.status },
+    }));
   },
 
   reset: () => {
@@ -120,6 +132,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         status: 'idle',
         storyId: null,
         chapterIndex: null,
+        route: null,
         fullText: '',
         latestSummary: null,
         snapshot: null,

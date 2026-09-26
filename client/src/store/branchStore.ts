@@ -1,7 +1,16 @@
 import { create } from 'zustand';
-import type { BranchNode, BranchEdge, AsyncStatus, AppError, ID } from '../types/domain';
+import { AppError } from '../types/domain';
+import type { BranchNode, BranchEdge, AsyncStatus, ID } from '../types/domain';
 import { nodesApi } from '../services/api';
 import { useToastStore } from './toastStore';
+
+export type GenerationPhase = 'idle' | 'streaming' | 'done' | 'error';
+
+interface GenerationSlice {
+  phase: GenerationPhase;
+  streamText: string;
+  error: AppError | null;
+}
 
 interface BranchState {
   nodes: BranchNode[];
@@ -9,10 +18,14 @@ interface BranchState {
   status: AsyncStatus;
   error: AppError | null;
   selectedId: ID | null;
+  generation: GenerationSlice;
   fetch(storyId: ID): Promise<void>;
   select(id: ID | null): void;
   addNode(storyId: ID, parentId?: ID | null): Promise<ID>;
-  updateNode(node: BranchNode, patch: Partial<Pick<BranchNode, 'title' | 'content' | 'summary' | 'isEnding'>>): Promise<void>;
+  updateNode(
+    node: BranchNode,
+    patch: Partial<Pick<BranchNode, 'title' | 'content' | 'summary' | 'isEnding'>>,
+  ): Promise<void>;
   deleteNode(id: ID): Promise<void>;
   addChoice(nodeId: ID, label: string): Promise<void>;
   removeChoice(nodeId: ID, choiceId: ID): Promise<void>;
@@ -34,12 +47,15 @@ function setNode(nodes: BranchNode[], updated: BranchNode): BranchNode[] {
   return nodes.map((n) => (n._id === updated._id ? updated : n));
 }
 
+let generateController: AbortController | null = null;
+
 export const useBranchStore = create<BranchState>((set, get) => ({
   nodes: [],
   edges: [],
   status: 'idle',
   error: null,
   selectedId: null,
+  generation: { phase: 'idle', streamText: '', error: null },
 
   fetch: async (storyId) => {
     set({ status: 'loading', error: null });
@@ -67,8 +83,14 @@ export const useBranchStore = create<BranchState>((set, get) => ({
   },
 
   updateNode: async (node, patch) => {
-    const { node: updated } = await nodesApi.update(node._id, { ...patch, baseVersion: node.version });
-    set((s) => ({ nodes: setNode(s.nodes, updated), edges: computeEdges(setNode(s.nodes, updated)) }));
+    const { node: updated } = await nodesApi.update(node._id, {
+      ...patch,
+      baseVersion: node.version,
+    });
+    set((s) => ({
+      nodes: setNode(s.nodes, updated),
+      edges: computeEdges(setNode(s.nodes, updated)),
+    }));
   },
 
   deleteNode: async (id) => {
@@ -89,7 +111,10 @@ export const useBranchStore = create<BranchState>((set, get) => ({
     if (!node) return;
     const { choice } = await nodesApi.addChoice(nodeId, { label });
     const updated: BranchNode = { ...node, choices: [...node.choices, choice] };
-    set((s) => ({ nodes: setNode(s.nodes, updated), edges: computeEdges(setNode(s.nodes, updated)) }));
+    set((s) => ({
+      nodes: setNode(s.nodes, updated),
+      edges: computeEdges(setNode(s.nodes, updated)),
+    }));
     useToastStore.getState().push('Choice added', 'success');
   },
 
@@ -103,8 +128,66 @@ export const useBranchStore = create<BranchState>((set, get) => ({
     });
   },
 
-  generateNode: async (_storyId, _parentId = null) => {
-    set({ status: 'loading' });
+  generateNode: async (storyId, parentId = null) => {
+    if (generateController) generateController.abort();
+    generateController = new AbortController();
+    const signal = generateController.signal;
+    set({ generation: { phase: 'streaming', streamText: '', error: null } });
+
+    const fail = (err: AppError) => {
+      set((s) => ({ generation: { ...s.generation, phase: 'error', error: err } }));
+      useToastStore.getState().push(err.message, 'error');
+    };
+
+    try {
+      await nodesApi.generateNode(
+        storyId,
+        parentId,
+        {
+          onDocStart: () => set({}),
+          onDelta: (text) =>
+            set((s) => ({
+              generation: { ...s.generation, streamText: s.generation.streamText + text },
+            })),
+          onSummary: () => set({}),
+          onDone: (payload) => {
+            const node = (payload as unknown as { saved?: BranchNode }).saved;
+            if (!node) return;
+            set((s) => {
+              if (s.nodes.some((n) => n._id === node._id)) {
+                return { generation: { ...s.generation, phase: 'done' } };
+              }
+              const merged: BranchNode = {
+                ...node,
+                storyId,
+                parentId: node.parentId ?? parentId ?? null,
+                isAIGenerated: true,
+                versions: node.versions ?? [],
+              };
+              const nodes = [...s.nodes, merged];
+              return {
+                nodes,
+                edges: computeEdges(nodes),
+                selectedId: merged._id,
+                generation: { ...s.generation, phase: 'done' },
+              };
+            });
+            useToastStore.getState().push('Continuation generated', 'success');
+          },
+          onError: (err) => fail(err),
+          onClose: () => set({}),
+        },
+        signal,
+      );
+    } catch (e) {
+      if (!signal.aborted) {
+        fail(
+          e instanceof AppError
+            ? e
+            : new AppError('NETWORK_ERROR', e instanceof Error ? e.message : 'Generation failed.'),
+        );
+      }
+    }
   },
 
   clearError: () => set({ error: null }),

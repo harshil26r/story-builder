@@ -22,7 +22,7 @@ interface StoryState {
   create(req: StoryCreateRequest): Promise<ID>;
   update(id: ID, patch: StoryUpdateRequest, opts?: { silent?: boolean }): Promise<void>;
   remove(id: ID): Promise<void>;
-  publish(id: ID, isPublic: boolean): Promise<void>;
+  publish(id: ID, isPublic: boolean): Promise<string>;
   regenerate(id: ID, req: RegenerateChapterRequest): Promise<void>;
   continue_(id: ID, req: ContinueRequest): Promise<void>;
   clearError(): void;
@@ -89,7 +89,11 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     } catch (e) {
       const err = e as AppError;
       if (err.code === 'CONFLICT') {
-        set({ conflict: { storyId: id, version: patch.baseVersion ?? -1 }, error: err, status: 'error' });
+        set({
+          conflict: { storyId: id, version: patch.baseVersion ?? -1 },
+          error: err,
+          status: 'error',
+        });
       } else {
         set({ error: err, status: 'error' });
       }
@@ -102,7 +106,10 @@ export const useStoryStore = create<StoryState>((set, get) => ({
 
   remove: async (id) => {
     await storiesApi.remove(id);
-    set((s) => ({ stories: s.stories.filter((st) => st._id !== id), current: s.current?._id === id ? null : s.current }));
+    set((s) => ({
+      stories: s.stories.filter((st) => st._id !== id),
+      current: s.current?._id === id ? null : s.current,
+    }));
     useToastStore.getState().push('Story deleted', 'info');
   },
 
@@ -110,9 +117,11 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     const { shareToken } = await storiesApi.publish(id, isPublic);
     set((s) => ({
       stories: s.stories.map((st) => (st._id === id ? { ...st, isPublic } : st)),
-      current: s.current && s.current._id === id ? { ...s.current, isPublic, shareToken } : s.current,
+      current:
+        s.current && s.current._id === id ? { ...s.current, isPublic, shareToken } : s.current,
     }));
     useToastStore.getState().push(isPublic ? 'Story published' : 'Story unpublished', 'success');
+    return shareToken;
   },
 
   regenerate: async (id, req) => {

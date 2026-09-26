@@ -25,7 +25,7 @@ export class StoryService {
       const response = await fetch(`/api/stories/${storyId}/nodes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(node)
+        body: JSON.stringify(node),
       });
       if (!response.ok) {
         return { status: response.status, error: 'Failed to save node' };
@@ -42,7 +42,7 @@ export class StoryService {
       const response = await fetch(`/api/stories/${link.sourceNodeId}/links`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(link)
+        body: JSON.stringify(link),
       });
       if (!response.ok) {
         return { status: response.status, error: 'Failed to create link' };

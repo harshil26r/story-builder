@@ -8,6 +8,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 
 import { AppError } from '../types/domain';
+import { getCookie, CSRF_COOKIE_NAME } from './api';
 import type {
   DocStartEvent,
   DeltaEvent,
@@ -39,6 +40,7 @@ export async function streamSSE(
     headers: {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
+      'x-csrf-token': getCookie(CSRF_COOKIE_NAME) ?? '',
     },
     credentials: 'same-origin',
     body: JSON.stringify(body),
@@ -52,7 +54,10 @@ export async function streamSSE(
     } catch {
       errBody = undefined;
     }
-    const appErr = new AppError(errBody?.code ?? String(res.status), errBody?.message ?? res.statusText);
+    const appErr = new AppError(
+      errBody?.code ?? String(res.status),
+      errBody?.message ?? res.statusText,
+    );
     handlers.onError?.(appErr);
     handlers.onClose?.();
     return;
@@ -109,7 +114,9 @@ export async function streamSSE(
     flushDispatch();
   } catch (e) {
     if (!signal.aborted) {
-      handlers.onError?.(new AppError('STREAM_ERROR', e instanceof Error ? e.message : 'Stream read failed.'));
+      handlers.onError?.(
+        new AppError('STREAM_ERROR', e instanceof Error ? e.message : 'Stream read failed.'),
+      );
     }
   } finally {
     reader.releaseLock();
@@ -141,7 +148,9 @@ function handleFrame(frame: { event: string; data: string }, handlers: SSEHandle
       handlers.onDone?.(parsed as DoneEvent);
       break;
     case 'error':
-      handlers.onError?.(new AppError((parsed as ErrorEventBody).code, (parsed as ErrorEventBody).message));
+      handlers.onError?.(
+        new AppError((parsed as ErrorEventBody).code, (parsed as ErrorEventBody).message),
+      );
       handlers.onClose?.();
       break;
     default:
