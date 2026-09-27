@@ -5,7 +5,7 @@ import App from '../App';
 import { useAuthStore } from '../store/authStore';
 import { useStoryStore } from '../store/storyStore';
 import { useCharacterStore } from '../store/characterStore';
-import { storiesApi } from '../services/api';
+import { storiesApi, charactersApi } from '../services/api';
 import { makeUser, makeStorySummary, makeCharacter } from './fixtures';
 
 // The App gates on `bootstrap()`, whose module-level `bootstrapped` flag would
@@ -28,7 +28,13 @@ describe('TICKET-21 — App routing', () => {
 
   beforeEach(() => {
     useAuthStore.setState({ user: null, status: 'idle', error: null, googleEnabled: false });
-    useStoryStore.setState({ stories: [], current: null, status: 'idle', error: null, conflict: null });
+    useStoryStore.setState({
+      stories: [],
+      current: null,
+      status: 'idle',
+      error: null,
+      conflict: null,
+    });
     useCharacterStore.setState({ characters: [], status: 'idle', error: null });
     vi.restoreAllMocks();
   });
@@ -44,9 +50,12 @@ describe('TICKET-21 — App routing', () => {
     expect(screen.getByRole('form', { name: /signup form/i })).toBeInTheDocument();
   });
 
-  it('/ is protected: redirects to /auth/login when there is no session', async () => {
+  it('/ renders Reader X website when there is no session, and /dashboard redirects to /auth/login', async () => {
     useAuthStore.setState({ user: null, status: 'empty', error: null });
     renderAt('/');
+    expect(screen.getByRole('heading', { name: /get the ultimate ai story & book builder/i })).toBeInTheDocument();
+
+    renderAt('/dashboard');
     expect(await screen.findByRole('form', { name: /login form/i })).toBeInTheDocument();
   });
 
@@ -87,7 +96,13 @@ describe('TICKET-40 — character routes', () => {
 
   beforeEach(() => {
     useAuthStore.setState({ user: null, status: 'idle', error: null, googleEnabled: false });
-    useStoryStore.setState({ stories: [], current: null, status: 'idle', error: null, conflict: null });
+    useStoryStore.setState({
+      stories: [],
+      current: null,
+      status: 'idle',
+      error: null,
+      conflict: null,
+    });
     useCharacterStore.setState({ characters: [makeCharacter()], status: 'success', error: null });
     vi.restoreAllMocks();
   });
@@ -96,6 +111,7 @@ describe('TICKET-40 — character routes', () => {
   it('/characters renders CharactersDashboard when authenticated', async () => {
     useAuthStore.setState({ user: makeUser(), status: 'success', error: null });
     useCharacterStore.setState({ characters: [makeCharacter()], status: 'success', error: null });
+    vi.spyOn(charactersApi, 'list').mockResolvedValue({ characters: [makeCharacter()] });
     renderAt('/characters');
 
     await waitFor(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AvatarUploader } from '../components/characters/AvatarUploader';
 
@@ -60,8 +60,11 @@ describe('TICKET-39 — AvatarUploader', () => {
     expect(onUpload).toHaveBeenCalledWith(file);
     expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument();
 
-    resolveUpload('/uploads/a.png');
-    // wait a tick for re-render
-    await new Promise((r) => setTimeout(r, 10));
+    await act(async () => {
+      resolveUpload('/uploads/a.png');
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('status', { hidden: true })).not.toBeInTheDocument();
+    });
   });
 });

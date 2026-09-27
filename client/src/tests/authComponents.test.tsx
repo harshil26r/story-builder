@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Toaster } from 'react-hot-toast';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthCard } from '../components/auth/AuthCard';
 import { LoginForm } from '../components/auth/LoginForm';
 import { SignupForm } from '../components/auth/SignupForm';
 import { useAuthStore } from '../store/authStore';
 import { authApi } from '../services/api';
+import { AppError } from '../types/domain';
 import { makeUser } from './fixtures';
 
 // TICKET-20: Auth UI — AuthCard + LoginForm + SignupForm.
@@ -20,7 +22,10 @@ describe('TICKET-20 — AuthCard', () => {
       </MemoryRouter>,
     );
     expect(screen.getByText('Welcome back')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /create an account/i })).toHaveAttribute('href', '/auth/signup');
+    expect(screen.getByRole('link', { name: /create an account/i })).toHaveAttribute(
+      'href',
+      '/auth/signup',
+    );
   });
 
   it('renders signup mode with link to login', () => {
@@ -63,17 +68,22 @@ describe('TICKET-20 — LoginForm', () => {
     expect(loginSpy).toHaveBeenCalledWith({ email: 'jane@example.com', password: 'password1' });
   });
 
-  it('shows error alert when login fails', async () => {
+  it('shows an error toast when login fails', async () => {
     const user = userEvent.setup();
-    vi.spyOn(authApi, 'login').mockRejectedValue({
-      name: 'AppError', code: 'UNAUTHORIZED', message: 'Email or password is wrong',
-    });
-    render(<LoginForm />);
+    vi.spyOn(authApi, 'login').mockRejectedValue(
+      new AppError('UNAUTHORIZED', 'Email or password is wrong'),
+    );
+    render(
+      <>
+        <LoginForm />
+        <Toaster />
+      </>,
+    );
     await user.type(screen.getByLabelText('Email'), 'a@b.c');
     await user.type(screen.getByLabelText('Password'), 'bad');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
-    expect(await screen.findByTestId('error-alert')).toBeInTheDocument();
+    expect(await screen.findByText('Email or password is wrong')).toBeInTheDocument();
   });
 });
 
@@ -109,6 +119,10 @@ describe('TICKET-20 — SignupForm', () => {
     await user.type(screen.getByLabelText('Password'), 'password1');
     await user.click(screen.getByRole('button', { name: /create account/i }));
 
-    expect(signupSpy).toHaveBeenCalledWith({ name: 'Jane', email: 'jane@example.com', password: 'password1' });
+    expect(signupSpy).toHaveBeenCalledWith({
+      name: 'Jane',
+      email: 'jane@example.com',
+      password: 'password1',
+    });
   });
 });

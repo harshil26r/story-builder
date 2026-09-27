@@ -2,12 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React, { useState, useEffect } from 'react';
-import {
-  authApi,
-  charactersApi,
-  storiesApi,
-  nodesApi,
-} from '../services/api';
+import { authApi, charactersApi, storiesApi, nodesApi } from '../services/api';
 import { AppError } from '../types/domain';
 
 // A mock component to test the 4 UI states contract
@@ -36,14 +31,24 @@ function TestComponent({ fetchCharacter }: { fetchCharacter: () => Promise<any> 
     loadData();
   }, []);
 
-  return React.createElement('div', null,
-    status === 'loading' && React.createElement('div', { 'data-testid': 'loading-state' }, 'Loading...'),
-    status === 'error' && React.createElement('div', { 'data-testid': 'error-state' },
-      React.createElement('p', null, errorMsg),
-      React.createElement('button', { onClick: loadData }, 'Retry')
-    ),
-    status === 'success' && data?.length === 0 && React.createElement('div', { 'data-testid': 'empty-state' }, 'No characters found.'),
-    status === 'success' && data?.length > 0 && React.createElement('div', { 'data-testid': 'success-state' }, 'Characters loaded')
+  return React.createElement(
+    'div',
+    null,
+    status === 'loading' &&
+      React.createElement('div', { 'data-testid': 'loading-state' }, 'Loading...'),
+    status === 'error' &&
+      React.createElement(
+        'div',
+        { 'data-testid': 'error-state' },
+        React.createElement('p', null, errorMsg),
+        React.createElement('button', { onClick: loadData }, 'Retry'),
+      ),
+    status === 'success' &&
+      data?.length === 0 &&
+      React.createElement('div', { 'data-testid': 'empty-state' }, 'No characters found.'),
+    status === 'success' &&
+      data?.length > 0 &&
+      React.createElement('div', { 'data-testid': 'success-state' }, 'Characters loaded'),
   );
 }
 
@@ -52,7 +57,10 @@ describe('API Service Proxy Integration Contract', () => {
 
   beforeEach(() => {
     fetchMock = vi.spyOn(global, 'fetch').mockImplementation(async () => {
-      return new Response(JSON.stringify({}), { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
     });
   });
 
@@ -65,7 +73,10 @@ describe('API Service Proxy Integration Contract', () => {
     const calls: string[] = [];
     fetchMock.mockImplementation(async (url: string | URL | Request) => {
       calls.push(url.toString());
-      return new Response(JSON.stringify({}), { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
     });
 
     // We invoke a few methods from each API module to verify they use relative URLs
@@ -75,7 +86,7 @@ describe('API Service Proxy Integration Contract', () => {
     await nodesApi.list('test-story-id');
 
     expect(calls.length).toBeGreaterThan(0);
-    calls.forEach(url => {
+    calls.forEach((url) => {
       // They should start with /api or /s, and definitely not http://localhost
       expect(url).toMatch(/^\/(api|s)\//);
       expect(url).not.toMatch(/^https?:\/\//);
@@ -117,7 +128,7 @@ describe('API Service Proxy Integration Contract', () => {
     });
 
     render(React.createElement(TestComponent, { fetchCharacter: () => charactersApi.list() }));
-    
+
     // Loading state is displayed initially
     expect(screen.getByTestId('loading-state')).toBeInTheDocument();
 
@@ -125,13 +136,16 @@ describe('API Service Proxy Integration Contract', () => {
     await waitFor(() => {
       expect(screen.getByTestId('error-state')).toBeInTheDocument();
     });
-    
+
     // Check error message
     expect(screen.getByText('Something went wrong.')).toBeInTheDocument();
 
     // 2. Retry load, succeeds with empty list
     fetchMock.mockImplementationOnce(async () => {
-      return new Response(JSON.stringify([]), { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
     });
 
     const user = userEvent.setup();

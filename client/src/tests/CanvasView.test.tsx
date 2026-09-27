@@ -26,7 +26,7 @@ describe('CanvasView Component', () => {
       isStartNode: false,
       createdAt: '2023-01-01T00:00:00.000Z',
       updatedAt: '2023-01-01T00:00:00.000Z',
-    }
+    },
   ];
 
   const mockLinks: Link[] = [
@@ -35,7 +35,7 @@ describe('CanvasView Component', () => {
       sourceNodeId: 'node-1',
       targetNodeId: 'node-2',
       label: 'Go',
-    }
+    },
   ];
 
   const mockOnNodeSelect = vi.fn();
@@ -52,7 +52,7 @@ describe('CanvasView Component', () => {
         links={mockLinks}
         onNodeSelect={mockOnNodeSelect}
         onLinkCreate={mockOnLinkCreate}
-      />
+      />,
     );
     expect(screen.getByText('Node 1')).toBeInTheDocument();
     expect(screen.getByText('Node 2')).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe('CanvasView Component', () => {
         links={mockLinks}
         onNodeSelect={mockOnNodeSelect}
         onLinkCreate={mockOnLinkCreate}
-      />
+      />,
     );
     fireEvent.click(screen.getByText('Node 1').parentElement as HTMLElement);
     expect(mockOnNodeSelect).toHaveBeenCalledWith('node-1');
@@ -78,7 +78,7 @@ describe('CanvasView Component', () => {
         links={mockLinks}
         onNodeSelect={mockOnNodeSelect}
         onLinkCreate={mockOnLinkCreate}
-      />
+      />,
     );
     // The link label appears inside the SVG <text> node (and its <title> child).
     expect(screen.getAllByText('Go').length).toBeGreaterThanOrEqual(1);
@@ -104,7 +104,7 @@ describe('Sidebar Component', () => {
       name: 'Alice',
       description: 'Main character',
       createdAt: '2023-01-01T00:00:00.000Z',
-    }
+    },
   ];
 
   it('renders NodeDetailsEditor with selected node data', () => {

@@ -63,7 +63,11 @@ describe('TICKET-19 — auth store', () => {
 
     await useAuthStore.getState().signup('Jane', 'jane@example.com', 'password1');
 
-    expect(signupSpy).toHaveBeenCalledWith({ name: 'Jane', email: 'jane@example.com', password: 'password1' });
+    expect(signupSpy).toHaveBeenCalledWith({
+      name: 'Jane',
+      email: 'jane@example.com',
+      password: 'password1',
+    });
     expect(useAuthStore.getState().status).toBe('success');
   });
 
