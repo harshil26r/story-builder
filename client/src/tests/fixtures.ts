@@ -1,6 +1,7 @@
 import type {
   User,
   Character,
+  CharacterGroup,
   StorySummary,
   Chapter,
   BranchNode,
@@ -49,6 +50,19 @@ export function makeCharacter(overrides: Partial<Character> = {}): Character {
     secretTrait: 'Can sense storms.',
     secretRevealChapter: 4,
     isTemplate: false,
+    groupIds: [],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+/** Minimal character-group fixture. */
+export function makeCharacterGroup(overrides: Partial<CharacterGroup> = {}): CharacterGroup {
+  return {
+    _id: 'g1',
+    userId: 'u1',
+    name: 'Villains',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
@@ -98,7 +112,8 @@ export function makeLinearStory(overrides: Partial<LinearStory> = {}): LinearSto
     _id: 's1',
     userId: 'u1',
     title: 'The Tides of Ember',
-    premise: 'A lighthouse keeper discovers a journal that predicts the day everyone will disappear.',
+    premise:
+      'A lighthouse keeper discovers a journal that predicts the day everyone will disappear.',
     genre: 'fantasy',
     tone: 'melancholy',
     targetAudience: 'adult',

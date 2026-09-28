@@ -1,13 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useCharacterStore } from '../store/characterStore';
-import { charactersApi } from '../services/api';
+import { charactersApi, characterGroupsApi } from '../services/api';
 import type { Character } from '../types/domain';
-import { makeCharacter } from './fixtures';
+import { makeCharacter, makeCharacterGroup } from './fixtures';
 
 // TICKET-35: Character Zustand store.
 describe('TICKET-35 — character store', () => {
   beforeEach(() => {
-    useCharacterStore.setState({ characters: [], status: 'idle', error: null });
+    useCharacterStore.setState({
+      characters: [],
+      status: 'idle',
+      error: null,
+      groups: [],
+      groupsStatus: 'idle',
+      groupsError: null,
+    });
     vi.restoreAllMocks();
   });
   afterEach(() => vi.restoreAllMocks());
@@ -79,7 +86,9 @@ describe('TICKET-35 — character store', () => {
 
   it('duplicate adds a copy', async () => {
     useCharacterStore.setState({ characters: [makeCharacter()], status: 'success' });
-    vi.spyOn(charactersApi, 'duplicate').mockResolvedValue({ character: makeCharacter({ _id: 'c-copy' }) });
+    vi.spyOn(charactersApi, 'duplicate').mockResolvedValue({
+      character: makeCharacter({ _id: 'c-copy' }),
+    });
     await useCharacterStore.getState().duplicate('c1');
     expect(useCharacterStore.getState().characters.some((c) => c._id === 'c-copy')).toBe(true);
   });
@@ -87,8 +96,78 @@ describe('TICKET-35 — character store', () => {
   it('uploadAvatar updates avatarUrl', async () => {
     useCharacterStore.setState({ characters: [makeCharacter()], status: 'success' });
     vi.spyOn(charactersApi, 'uploadAvatar').mockResolvedValue({ avatarUrl: '/uploads/a.png' });
-    const url = await useCharacterStore.getState().uploadAvatar('c1', new File(['x'], 'a.png', { type: 'image/png' }));
+    const url = await useCharacterStore
+      .getState()
+      .uploadAvatar('c1', new File(['x'], 'a.png', { type: 'image/png' }));
     expect(url).toBe('/uploads/a.png');
     expect(useCharacterStore.getState().characters[0].avatarUrl).toBe('/uploads/a.png');
+  });
+});
+
+// TICKET: character group store actions.
+describe('character group store actions', () => {
+  beforeEach(() => {
+    useCharacterStore.setState({
+      characters: [],
+      status: 'success',
+      error: null,
+      groups: [],
+      groupsStatus: 'idle',
+      groupsError: null,
+    });
+    vi.restoreAllMocks();
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('fetchGroups loads groups', async () => {
+    vi.spyOn(characterGroupsApi, 'list').mockResolvedValue({ groups: [makeCharacterGroup()] });
+    await useCharacterStore.getState().fetchGroups();
+    expect(useCharacterStore.getState().groups).toHaveLength(1);
+    expect(useCharacterStore.getState().groupsStatus).toBe('success');
+  });
+
+  it('fetchGroups failure sets groupsError', async () => {
+    vi.spyOn(characterGroupsApi, 'list').mockRejectedValue(new Error('nope'));
+    await useCharacterStore.getState().fetchGroups();
+    expect(useCharacterStore.getState().groupsStatus).toBe('error');
+    expect(useCharacterStore.getState().groupsError?.message).toBe('nope');
+  });
+
+  it('createGroup appends a group', async () => {
+    vi.spyOn(characterGroupsApi, 'create').mockResolvedValue({
+      group: makeCharacterGroup({ _id: 'g2', name: 'Rivals' }),
+    });
+    const group = await useCharacterStore.getState().createGroup('Rivals');
+    expect(group._id).toBe('g2');
+    expect(useCharacterStore.getState().groups[0].name).toBe('Rivals');
+  });
+
+  it('renameGroup updates a group name', async () => {
+    useCharacterStore.setState({ groups: [makeCharacterGroup()] });
+    vi.spyOn(characterGroupsApi, 'rename').mockResolvedValue({
+      group: makeCharacterGroup({ name: 'Heroes II' }),
+    });
+    await useCharacterStore.getState().renameGroup('g1', 'Heroes II');
+    expect(useCharacterStore.getState().groups[0].name).toBe('Heroes II');
+  });
+
+  it('removeGroup deletes a group and prunes groupIds from characters', async () => {
+    useCharacterStore.setState({
+      groups: [makeCharacterGroup()],
+      characters: [makeCharacter({ groupIds: ['g1', 'keep'] })],
+    });
+    vi.spyOn(characterGroupsApi, 'remove').mockResolvedValue({ ok: true });
+    await useCharacterStore.getState().removeGroup('g1');
+    expect(useCharacterStore.getState().groups).toHaveLength(0);
+    expect(useCharacterStore.getState().characters[0].groupIds).toEqual(['keep']);
+  });
+
+  it('setGroups replaces membership and updates the character', async () => {
+    useCharacterStore.setState({ characters: [makeCharacter()], status: 'success' });
+    vi.spyOn(charactersApi, 'setGroups').mockResolvedValue({
+      character: makeCharacter({ _id: 'c1', groupIds: ['g9'] }),
+    });
+    await useCharacterStore.getState().setGroups('c1', ['g9']);
+    expect(useCharacterStore.getState().characters[0].groupIds).toEqual(['g9']);
   });
 });

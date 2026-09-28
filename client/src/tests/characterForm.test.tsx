@@ -43,12 +43,19 @@ describe('TICKET-38 — CharacterRelationshipsEditor', () => {
     const alice = makeCharacter({ _id: 'a', name: 'Alice' });
     const bob = makeCharacter({ _id: 'b', name: 'Bob' });
     render(
-      <CharacterRelationshipsEditor characterId="a" available={[alice, bob]} value={[]} onChange={vi.fn()} />,
+      <CharacterRelationshipsEditor
+        characterId="a"
+        available={[alice, bob]}
+        value={[]}
+        onChange={vi.fn()}
+      />,
     );
     const select = screen.getByLabelText('Choose character');
     // Alice must not appear as an option.
     expect(select.querySelectorAll('option').length).toBe(2); // "Select character…" + Bob
-    expect(Array.from(select.querySelectorAll('option')).map((o) => o.textContent)).not.toContain('Alice');
+    expect(Array.from(select.querySelectorAll('option')).map((o) => o.textContent)).not.toContain(
+      'Alice',
+    );
   });
 
   it('displays existing relationships with type label', () => {
@@ -72,7 +79,12 @@ describe('TICKET-38 — CharacterRelationshipsEditor', () => {
     const alice = makeCharacter({ _id: 'a', name: 'Alice' });
     const bob = makeCharacter({ _id: 'b', name: 'Bob' });
     render(
-      <CharacterRelationshipsEditor characterId="a" available={[alice, bob]} value={[]} onChange={onChange} />,
+      <CharacterRelationshipsEditor
+        characterId="a"
+        available={[alice, bob]}
+        value={[]}
+        onChange={onChange}
+      />,
     );
     await user.selectOptions(screen.getByLabelText('Choose character'), 'b');
     await user.click(screen.getByRole('button', { name: /add/i }));
