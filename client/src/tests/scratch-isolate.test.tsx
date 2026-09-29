@@ -7,9 +7,17 @@ describe('plain form user.click', () => {
     const user = userEvent.setup();
     let submitted = false;
     render(
-      <form onSubmit={(e) => { e.preventDefault(); submitted = true; console.log('SUBMIT HANDLER RAN'); }}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submitted = true;
+          console.log('SUBMIT HANDLER RAN');
+        }}
+      >
         <input type="text" aria-label="name" required />
-        <button type="submit" aria-label="Go">Go</button>
+        <button type="submit" aria-label="Go">
+          Go
+        </button>
       </form>,
     );
     await user.type(screen.getByLabelText('name'), 'hello');

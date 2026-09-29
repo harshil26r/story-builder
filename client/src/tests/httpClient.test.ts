@@ -73,10 +73,14 @@ describe('TICKET-18 — http client + CSRF', () => {
       status: 400,
       statusText: 'Bad Request',
       headers: new Headers(),
-      json: async () => ({ code: 'VALIDATION_ERROR', message: 'Email is required', fields: [{ field: 'email', message: 'Required' }] }),
+      json: async () => ({
+        code: 'VALIDATION_ERROR',
+        message: 'Email is required',
+        fields: [{ field: 'email', message: 'Required' }],
+      }),
     });
 
-    const err = await http.get<unknown>('/x').catch(<T>(e: T): T => e) as AppError;
+    const err = (await http.get<unknown>('/x').catch(<T>(e: T): T => e)) as AppError;
     expect(err).toBeInstanceOf(AppError);
     expect(err.code).toBe('VALIDATION_ERROR');
     expect(err.message).toBe('Email is required');

@@ -16,7 +16,15 @@ function stubLocationAssign() {
     writable: true,
     value: { ...original, assign },
   });
-  return { assign, restore: () => Object.defineProperty(window, 'location', { configurable: true, writable: true, value: original }) };
+  return {
+    assign,
+    restore: () =>
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        writable: true,
+        value: original,
+      }),
+  };
 }
 
 let restoreLocation: (() => void) | null = null;

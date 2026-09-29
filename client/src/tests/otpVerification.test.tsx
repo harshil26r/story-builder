@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Toaster } from 'react-hot-toast';
 import { OtpVerification } from '../components/auth/OtpVerification';
+import { AppError } from '../types/domain';
 
 // TICKET-26: OtpVerification.
 describe('TICKET-26 — OtpVerification', () => {
@@ -10,7 +12,9 @@ describe('TICKET-26 — OtpVerification', () => {
     const input = screen.getByLabelText('6-digit verification code');
     expect(input).toHaveFocus();
     expect(screen.getByText(/resend code in/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /resend verification code/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /resend verification code/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('enables resend after countdown reaches zero', () => {
@@ -21,7 +25,14 @@ describe('TICKET-26 — OtpVerification', () => {
   it('calls onResendOverride on resend click', async () => {
     const user = userEvent.setup();
     const onResend = vi.fn().mockResolvedValue(undefined);
-    render(<OtpVerification email="a@b.c" initialCountdownSec={0} onResendOverride={onResend} onSubmitOverride={vi.fn()} />);
+    render(
+      <OtpVerification
+        email="a@b.c"
+        initialCountdownSec={0}
+        onResendOverride={onResend}
+        onSubmitOverride={vi.fn()}
+      />,
+    );
     await user.click(screen.getByRole('button', { name: /resend verification code/i }));
     expect(onResend).toHaveBeenCalled();
   });
@@ -46,12 +57,17 @@ describe('TICKET-26 — OtpVerification', () => {
     expect(input).toHaveValue('123456');
   });
 
-  it('shows error alert when submit fails', async () => {
+  it('shows an error toast when submit fails', async () => {
     const user = userEvent.setup();
-    const onSubmit = vi.fn().mockRejectedValue({ name: 'AppError', code: 'OTP_INVALID', message: 'Wrong code' });
-    render(<OtpVerification email="a@b.c" initialCountdownSec={0} onSubmitOverride={onSubmit} />);
+    const onSubmit = vi.fn().mockRejectedValue(new AppError('OTP_INVALID', 'Wrong code'));
+    render(
+      <>
+        <OtpVerification email="a@b.c" initialCountdownSec={0} onSubmitOverride={onSubmit} />
+        <Toaster />
+      </>,
+    );
     await user.type(screen.getByLabelText('6-digit verification code'), '000000');
     await user.click(screen.getByRole('button', { name: /verify code/i }));
-    expect(await screen.findByTestId('error-alert')).toBeInTheDocument();
+    expect(await screen.findByText('Wrong code')).toBeInTheDocument();
   });
 });
