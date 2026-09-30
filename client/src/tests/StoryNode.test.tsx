@@ -30,7 +30,9 @@ describe('StoryNode Component', () => {
   });
 
   it('renders "Start Node" badge only when isStartNode is true', () => {
-    const { rerender } = render(<StoryNode node={mockNode} isSelected={false} onClick={mockOnClick} />);
+    const { rerender } = render(
+      <StoryNode node={mockNode} isSelected={false} onClick={mockOnClick} />,
+    );
     expect(screen.queryByText('Start Node')).not.toBeInTheDocument();
 
     const startNode = { ...mockNode, isStartNode: true };
@@ -39,7 +41,9 @@ describe('StoryNode Component', () => {
   });
 
   it('applies selection styling or data-selected attribute when isSelected is true', () => {
-    const { rerender, container } = render(<StoryNode node={mockNode} isSelected={false} onClick={mockOnClick} />);
+    const { rerender, container } = render(
+      <StoryNode node={mockNode} isSelected={false} onClick={mockOnClick} />,
+    );
 
     let element = container.firstChild as HTMLElement;
     expect(element.getAttribute('data-selected')).toBe('false');
@@ -80,7 +84,7 @@ describe('StoryLink Component', () => {
     const { container } = render(
       <svg>
         <StoryLink link={mockLink} startX={0} startY={0} endX={100} endY={100} />
-      </svg>
+      </svg>,
     );
     const labelEl = container.querySelector('text.story-link-label');
     // The <text> node's last child is the rendered label (after the <title> tooltip).

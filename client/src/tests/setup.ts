@@ -1,9 +1,13 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
+import { toast } from 'react-hot-toast';
 
 afterEach(() => {
   cleanup();
+  // react-hot-toast keeps a global store across tests — purge so a toast fired
+  // in one test never renders into a later test's <Toaster />.
+  toast.remove();
   vi.clearAllMocks();
   window.localStorage.clear();
   window.sessionStorage.clear();

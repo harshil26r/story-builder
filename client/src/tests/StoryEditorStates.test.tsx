@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { StoryEditor } from '../components/stories/StoryEditor';
@@ -75,5 +75,7 @@ describe('StoryEditor UI States', () => {
     const retryBtn = screen.getByRole('button', { name: /retry/i });
     fireEvent.click(retryBtn);
     expect(storiesApi.get).toHaveBeenCalledTimes(2);
+    await act(async () => {});
+    expect(screen.getByTestId('error-alert')).toBeInTheDocument();
   });
 });

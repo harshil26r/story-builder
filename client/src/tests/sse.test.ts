@@ -26,14 +26,16 @@ describe('TICKET-54 — SSE client + generation store', () => {
   }
 
   it('parses event/data framing and calls onDelta', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      sseResponse(
-        'event: doc-start\ndata: {"jobId":"j1","storyId":"s1","structureType":"linear","chapterIndex":0,"title":"Ch"}\n\n' +
-          'event: delta\ndata: {"text":"Hello "}\n\n' +
-          'event: delta\ndata: {"text":"world"}\n\n' +
-          'event: done\ndata: {"jobId":"j1","chapterIndex":0,"saved":{"_id":"c1","storyId":"s1","order":1,"title":"Ch","content":"Hello world","summary":"","version":1,"totalChapters":1,"wordCount":2}}\n\n',
-      ),
-    );
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        sseResponse(
+          'event: doc-start\ndata: {"jobId":"j1","storyId":"s1","structureType":"linear","chapterIndex":0,"title":"Ch"}\n\n' +
+            'event: delta\ndata: {"text":"Hello "}\n\n' +
+            'event: delta\ndata: {"text":"world"}\n\n' +
+            'event: done\ndata: {"jobId":"j1","chapterIndex":0,"saved":{"_id":"c1","storyId":"s1","order":1,"title":"Ch","content":"Hello world","summary":"","version":1,"totalChapters":1,"wordCount":2}}\n\n',
+        ),
+      );
 
     const deltas: string[] = [];
     let doneCalled = false;
@@ -60,7 +62,12 @@ describe('TICKET-54 — SSE client + generation store', () => {
     const handleError = (e: Error) => {
       err = e;
     };
-    await streamSSE('/api/ai/generate-chapter', {}, { onError: handleError }, new AbortController().signal);
+    await streamSSE(
+      '/api/ai/generate-chapter',
+      {},
+      { onError: handleError },
+      new AbortController().signal,
+    );
     expect((err as Error | null)?.message).toBe('no ai');
   });
 
@@ -91,13 +98,15 @@ describe('TICKET-54 — SSE client + generation store', () => {
   });
 
   it('generation store start appends deltas and reaches done', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      sseResponse(
-        'event: delta\ndata: {"text":"Once upon"}\n\n' +
-          'event: delta\ndata: {"text":" a time"}\n\n' +
-          'event: done\ndata: {"jobId":"j1","chapterIndex":0,"saved":{"_id":"c1","storyId":"s1","order":1,"title":"Ch","content":"Once upon a time","summary":"","version":1,"totalChapters":1,"wordCount":4}}\n\n',
-      ),
-    );
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        sseResponse(
+          'event: delta\ndata: {"text":"Once upon"}\n\n' +
+            'event: delta\ndata: {"text":" a time"}\n\n' +
+            'event: done\ndata: {"jobId":"j1","chapterIndex":0,"saved":{"_id":"c1","storyId":"s1","order":1,"title":"Ch","content":"Once upon a time","summary":"","version":1,"totalChapters":1,"wordCount":4}}\n\n',
+        ),
+      );
 
     await useGenerationStore.getState().start('chapter', 's1', { chapterIndex: 0 });
 
@@ -109,9 +118,11 @@ describe('TICKET-54 — SSE client + generation store', () => {
   it('generation store abort transitions back to idle', async () => {
     // Use a never-ending stream.
     const body = new ReadableStream<Uint8Array>({ pull() {} });
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } }),
-    );
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } }),
+      );
     const p = useGenerationStore.getState().start('chapter', 's1', { chapterIndex: 0 });
     useGenerationStore.getState().abort();
     await Promise.race([p, new Promise((r) => setTimeout(r, 30))]);

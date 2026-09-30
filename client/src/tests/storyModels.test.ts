@@ -7,7 +7,7 @@ describe('Story Domain Models', () => {
       id: 'char-1',
       name: 'Hero',
       description: 'The main character',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
     expect(char.id).toBe('char-1');
     expect(char.avatarUrl).toBeUndefined();
@@ -22,7 +22,7 @@ describe('Story Domain Models', () => {
       characters: ['char-1'],
       isStartNode: true,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     expect(node.characters).toBeInstanceOf(Array);
     expect(node.characters[0]).toBe('char-1');
@@ -34,7 +34,7 @@ describe('Story Domain Models', () => {
       id: 'link-1',
       sourceNodeId: 'node-1',
       targetNodeId: 'node-2',
-      label: 'Go outside'
+      label: 'Go outside',
     };
     expect(link.sourceNodeId).toBe('node-1');
     expect(link.targetNodeId).toBe('node-2');
@@ -49,14 +49,14 @@ describe('Story Domain Models', () => {
       characters: [],
       isStartNode: true,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     const link: Link = {
       id: 'link-1',
       sourceNodeId: 'node-1',
       targetNodeId: 'node-2',
-      label: 'Next'
+      label: 'Next',
     };
 
     const story: Story = {
@@ -68,7 +68,7 @@ describe('Story Domain Models', () => {
       nodes: [node],
       links: [link],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     expect(story.nodes.length).toBe(1);
