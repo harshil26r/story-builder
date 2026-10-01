@@ -7,6 +7,7 @@ import type {
   User,
   OtpPurpose,
   Character,
+  CharacterGroup,
   CharacterRole,
   CharacterRelationship,
   StorySummary,
@@ -91,6 +92,12 @@ export type CharacterResponse = { character: Character };
 export type AvatarUploadResponse = { avatarUrl: string };
 export type DuplicateResponse = { character: Character };
 
+// ── Character groups (user-curated, many-to-many) ────────────────────────────
+export type CharacterGroupListResponse = { groups: CharacterGroup[] };
+export type CharacterGroupResponse = { group: CharacterGroup };
+export type AssignGroupsRequest = { groupIds: ID[] };
+export type AssignGroupsResponse = { character: Character };
+
 // ── Stories ──────────────────────────────────────────────────────────────────
 export interface StoryCreateRequest {
   title: string;
@@ -116,6 +123,7 @@ export interface StoryUpdateRequest {
   generationMode?: GenerationMode;
   characterIds?: ID[];
   disclaimerText?: string;
+  coverImageUrl?: string | null;
   isPublic?: boolean;
   status?: StoryStatus;
   baseVersion?: number;
@@ -123,7 +131,11 @@ export interface StoryUpdateRequest {
 export type StoryListResponse = { stories: StorySummary[] };
 export type StoryDetailResponse = Story;
 export type StoryResponse = { story: Story };
-export type RegenerateChapterRequest = { chapterId: ID; mode: 'only' | 'onward'; baseVersion?: number };
+export type RegenerateChapterRequest = {
+  chapterId: ID;
+  mode: 'only' | 'onward';
+  baseVersion?: number;
+};
 export type ContinueRequest = ({ chaptersCount?: number } & { baseVersion?: number }) | undefined;
 export type PublishResponse = { isPublic: boolean; shareToken: string };
 

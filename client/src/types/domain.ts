@@ -15,14 +15,7 @@ export type StoryStatus = 'draft' | 'complete';
 export type CharacterRole = 'protagonist' | 'antagonist' | 'side' | 'mentor' | 'supporting';
 export type OtpPurpose = 'signup-verify' | 'login' | 'password-reset';
 export type RelationshipType =
-  | 'friend'
-  | 'rival'
-  | 'sibling'
-  | 'mentor'
-  | 'parent'
-  | 'spouse'
-  | 'enemy'
-  | 'secret-ally';
+  'friend' | 'rival' | 'sibling' | 'mentor' | 'parent' | 'spouse' | 'enemy' | 'secret-ally';
 export type ContentMode = 'ai' | 'user';
 export type AsyncStatus = 'idle' | 'loading' | 'empty' | 'error' | 'success';
 
@@ -81,6 +74,16 @@ export interface Character {
   secretTrait: string;
   secretRevealChapter: number | null;
   isTemplate: boolean;
+  groupIds: ID[];
+  createdAt: ISOString;
+  updatedAt: ISOString;
+}
+
+// ── CharacterGroup (user-curated, many-to-many with Character) ───────────────
+export interface CharacterGroup {
+  _id: ID;
+  userId: ID;
+  name: string;
   createdAt: ISOString;
   updatedAt: ISOString;
 }
@@ -219,7 +222,31 @@ export interface SnapshotEvent {
 }
 export interface DoneEvent {
   jobId: string;
-  saved: { _id: ID; storyId: ID; order: number; title: string; content: string; summary: string; version: number; totalChapters: number; wordCount: number } | { _id: ID; storyId: ID; title: string; content: string; summary: string; version: number; choices: StoryChoice[]; isStart: boolean; isEnding: boolean; totalNodes: number; wordCount: number };
+  saved:
+    | {
+        _id: ID;
+        storyId: ID;
+        order: number;
+        title: string;
+        content: string;
+        summary: string;
+        version: number;
+        totalChapters: number;
+        wordCount: number;
+      }
+    | {
+        _id: ID;
+        storyId: ID;
+        title: string;
+        content: string;
+        summary: string;
+        version: number;
+        choices: StoryChoice[];
+        isStart: boolean;
+        isEnding: boolean;
+        totalNodes: number;
+        wordCount: number;
+      };
 }
 export interface ErrorEventBody {
   code: string;

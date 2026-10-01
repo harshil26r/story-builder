@@ -27,9 +27,9 @@ describe('Vite Proxy Routing Integration', () => {
         res.writeHead(200, {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive'
+          Connection: 'keep-alive',
         });
-        
+
         // Write chunks immediately and with delays to simulate stream
         res.write('event: chunk\ndata: {"text":"part1"}\n\n');
         setTimeout(() => {
@@ -58,9 +58,9 @@ describe('Vite Proxy Routing Integration', () => {
     // 3. Start Vite dev server with actual config
     viteServer = await createViteServer({
       configFile: path.resolve(__dirname, '../../vite.config.ts'),
-      server: { 
+      server: {
         port: 0, // random port
-        host: '127.0.0.1' 
+        host: '127.0.0.1',
       },
     });
     await viteServer.listen();
@@ -93,7 +93,7 @@ describe('Vite Proxy Routing Integration', () => {
 
   it('routes /s/* to mock backend when Accept is application/json', async () => {
     const res = await fetch(`http://127.0.0.1:${vitePort}/s/share-xyz`, {
-      headers: { Accept: 'application/json' }
+      headers: { Accept: 'application/json' },
     });
     expect(res.status).toBe(200);
     const data = await res.json();
@@ -102,7 +102,7 @@ describe('Vite Proxy Routing Integration', () => {
 
   it('returns index.html for /s/* when Accept is text/html (SPA fallback)', async () => {
     const res = await fetch(`http://127.0.0.1:${vitePort}/s/share-xyz`, {
-      headers: { Accept: 'text/html' }
+      headers: { Accept: 'text/html' },
     });
     expect(res.status).toBe(200);
     const text = await res.text();
@@ -112,7 +112,7 @@ describe('Vite Proxy Routing Integration', () => {
 
   it('returns index.html for unknown routes like /dashboard (SPA fallback)', async () => {
     const res = await fetch(`http://127.0.0.1:${vitePort}/dashboard`, {
-      headers: { Accept: 'text/html' }
+      headers: { Accept: 'text/html' },
     });
     expect(res.status).toBe(200);
     const text = await res.text();
@@ -133,10 +133,10 @@ describe('Vite Proxy Routing Integration', () => {
 
     const reader = res.body?.getReader();
     expect(reader).toBeDefined();
-    
+
     let receivedText = '';
     const decoder = new TextDecoder();
-    
+
     // Read stream until done
     while (true) {
       const { done, value } = await reader!.read();

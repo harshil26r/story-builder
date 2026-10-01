@@ -6,7 +6,13 @@ import { makeStorySummary, makeLinearStory } from './fixtures';
 // TICKET-44: Story Zustand store.
 describe('TICKET-44 — story store', () => {
   beforeEach(() => {
-    useStoryStore.setState({ stories: [], current: null, status: 'idle', conflict: null, error: null });
+    useStoryStore.setState({
+      stories: [],
+      current: null,
+      status: 'idle',
+      conflict: null,
+      error: null,
+    });
     vi.restoreAllMocks();
   });
   afterEach(() => vi.restoreAllMocks());
@@ -47,7 +53,9 @@ describe('TICKET-44 — story store', () => {
 
   it('update with silent flag does not toast; CONFLICT sets conflict state', async () => {
     useStoryStore.setState({ current: makeLinearStory(), status: 'success' });
-    vi.spyOn(storiesApi, 'update').mockResolvedValue({ story: makeLinearStory({ title: 'Renamed' }) });
+    vi.spyOn(storiesApi, 'update').mockResolvedValue({
+      story: makeLinearStory({ title: 'Renamed' }),
+    });
     await useStoryStore.getState().update('s1', { title: 'Renamed' }, { silent: true });
     expect(useStoryStore.getState().current?.title).toBe('Renamed');
     expect(useStoryStore.getState().conflict).toBeNull();
@@ -58,12 +66,18 @@ describe('TICKET-44 — story store', () => {
       code: 'CONFLICT',
       message: 'Version mismatch',
     });
-    await expect(useStoryStore.getState().update('s1', { title: 'x' }, { silent: true })).rejects.toThrow();
+    await expect(
+      useStoryStore.getState().update('s1', { title: 'x' }, { silent: true }),
+    ).rejects.toThrow();
     expect(useStoryStore.getState().conflict?.storyId).toBe('s1');
   });
 
   it('publish toggles isPublic and shareToken', async () => {
-    useStoryStore.setState({ current: makeLinearStory(), stories: [makeStorySummary()], status: 'success' });
+    useStoryStore.setState({
+      current: makeLinearStory(),
+      stories: [makeStorySummary()],
+      status: 'success',
+    });
     vi.spyOn(storiesApi, 'publish').mockResolvedValue({ isPublic: true, shareToken: 'tok' });
     await useStoryStore.getState().publish('s1', true);
     expect(useStoryStore.getState().current?.isPublic).toBe(true);

@@ -54,9 +54,7 @@ describe('TICKET-36 — UI primitives', () => {
   });
 
   it('EmptyState shows title + description + action', () => {
-    render(
-      <EmptyState title="Empty" description="Nothing here" action={<button>Act</button>} />,
-    );
+    render(<EmptyState title="Empty" description="Nothing here" action={<button>Act</button>} />);
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
     expect(screen.getByText('Empty')).toBeInTheDocument();
     expect(screen.getByText('Nothing here')).toBeInTheDocument();
@@ -65,7 +63,12 @@ describe('TICKET-36 — UI primitives', () => {
 
   it('ErrorAlert shows message fields and retry', () => {
     const onRetry = vi.fn();
-    render(<ErrorAlert error={{ message: 'Failed', code: 'E', fields: [{ field: 'x', message: 'bad' }] }} onRetry={onRetry} />);
+    render(
+      <ErrorAlert
+        error={{ message: 'Failed', code: 'E', fields: [{ field: 'x', message: 'bad' }] }}
+        onRetry={onRetry}
+      />,
+    );
     expect(screen.getByText('Failed')).toBeInTheDocument();
     expect(screen.getByText('x:')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
@@ -74,7 +77,11 @@ describe('TICKET-36 — UI primitives', () => {
   it('Modal open renders dialog with a11y attrs and closes on Escape', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<Modal open onClose={onClose} title="T"><div>body</div></Modal>);
+    render(
+      <Modal open onClose={onClose} title="T">
+        <div>body</div>
+      </Modal>,
+    );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
     await user.keyboard('{Escape}');
@@ -85,7 +92,16 @@ describe('TICKET-36 — UI primitives', () => {
     const user = userEvent.setup();
     const onConfirm = vi.fn();
     const onCancel = vi.fn();
-    render(<ConfirmDialog open title="Sure?" message="Do it" confirmLabel="Yes" onConfirm={onConfirm} onCancel={onCancel} />);
+    render(
+      <ConfirmDialog
+        open
+        title="Sure?"
+        message="Do it"
+        confirmLabel="Yes"
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />,
+    );
     await user.click(screen.getByRole('button', { name: 'Yes' }));
     expect(onConfirm).toHaveBeenCalled();
   });
