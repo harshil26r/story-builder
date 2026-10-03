@@ -25,25 +25,27 @@ export default async function createApp(mongoUri, options = {}) {
 
   // Session
   const SEVEN_DAYS = 7 * 24 * 60 * 60;
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
-    name: 'connect.sid',
-    resave: false,
-    saveUninitialized: false,
-    rolling: true,
-    cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: SEVEN_DAYS * 1000,
-    },
-    store: MongoStore.create({
-      mongoUrl: mongoUri || process.env.MONGO_URI || 'mongodb://127.0.0.1/story-builder',
-      ttl: SEVEN_DAYS,
-      collectionName: 'sessions',
-      autoRemove: 'native',
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+      name: 'connect.sid',
+      resave: false,
+      saveUninitialized: false,
+      rolling: true,
+      cookie: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: SEVEN_DAYS * 1000,
+      },
+      store: MongoStore.create({
+        mongoUrl: mongoUri || process.env.MONGO_URI || 'mongodb://127.0.0.1/story-builder',
+        ttl: SEVEN_DAYS,
+        collectionName: 'sessions',
+        autoRemove: 'native',
+      }),
     }),
-  }));
+  );
 
   // Global rate limit (100/min/IP) — SPEC §7.2
   const { globalLimiter } = await import('./middleware/rateLimit.js');
@@ -72,6 +74,25 @@ export default async function createApp(mongoUri, options = {}) {
 
   const characterRoutes = await import('./routes/character.routes.js');
   app.use('/api/characters', characterRoutes.default);
+
+  const storyRoutes = await import('./routes/story.routes.js');
+  app.use('/api/stories', storyRoutes.default);
+  // Public share read — no auth/CSRF (SPEC §3.2 Share).
+  app.use('/s', storyRoutes.shareRouter);
+
+  // Branching nodes (SPEC §3.2 Branching) — serves /api/stories/:id/nodes and
+  // /api/nodes/... from one router; mounted before story's export routes so the
+  // `nodes` path segment never collides.
+  const nodeRoutes = await import('./routes/node.routes.js');
+  app.use('/api', nodeRoutes.default);
+
+  const aiRoutes = await import('./routes/ai.routes.js');
+  app.use('/api/ai', aiRoutes.default);
+
+  // Export downloads (PDF/EPUB) live under the story resource. Mounted after
+  // storyRoutes; story's `/:id` never matches the extra path segments.
+  const exportRoutes = await import('./routes/export.routes.js');
+  app.use('/api/stories', exportRoutes.default);
 
   // Central error handler
   const errorHandler = await import('./middleware/errorHandler.js');

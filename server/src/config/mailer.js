@@ -24,7 +24,9 @@ if (process.env.SMTP_HOST) {
     async sendMail({ to, subject, text }) {
       const masked = String(to).replace(/^(.).+(@.*)$/, (_, a, b) => `${a}***${b}`);
       // eslint-disable-next-line no-console
-      console.log(`[mailer:console] to=${masked} subject="${subject}" body="${String(text).slice(0, 200)}"`);
+      console.log(
+        `[mailer:console] to=${masked} subject="${subject}" body="${String(text).slice(0, 200)}"`,
+      );
       return undefined;
     },
   };

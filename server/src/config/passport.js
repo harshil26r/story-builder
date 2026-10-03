@@ -20,24 +20,25 @@ export function createPassport({ clientID, clientSecret, callbackURL } = {}) {
   // and a bad password surface the same info message (SPEC §2.2
   // INVALID_CREDENTIALS) — never distinguish the two (user-enumeration risk).
   passport.use(
-    new LocalStrategy(
-      { usernameField: 'email', passwordField: 'password' },
-      async function verify(email, password, done) {
-        try {
-          const user = await User.findOne({ email: String(email).toLowerCase() });
-          if (!user || !user.passwordHash) {
-            return done(null, false, { message: 'Invalid email or password.' });
-          }
-          const ok = await user.comparePassword(password);
-          if (!ok) {
-            return done(null, false, { message: 'Invalid email or password.' });
-          }
-          return done(null, user);
-        } catch (err) {
-          return done(err);
+    new LocalStrategy({ usernameField: 'email', passwordField: 'password' }, async function verify(
+      email,
+      password,
+      done,
+    ) {
+      try {
+        const user = await User.findOne({ email: String(email).toLowerCase() });
+        if (!user || !user.passwordHash) {
+          return done(null, false, { message: 'Invalid email or password.' });
         }
+        const ok = await user.comparePassword(password);
+        if (!ok) {
+          return done(null, false, { message: 'Invalid email or password.' });
+        }
+        return done(null, user);
+      } catch (err) {
+        return done(err);
       }
-    )
+    }),
   );
 
   // ── Google OAuth2 strategy ────────────────────────────────────────────────
@@ -55,7 +56,8 @@ export function createPassport({ clientID, clientSecret, callbackURL } = {}) {
           try {
             const googleId = String(profile.id);
             const email = (
-              (profile.emails && profile.emails[0] && profile.emails[0].value) || ''
+              (profile.emails && profile.emails[0] && profile.emails[0].value) ||
+              ''
             ).toLowerCase();
 
             let user = await User.findOne({ googleId });
@@ -80,8 +82,8 @@ export function createPassport({ clientID, clientSecret, callbackURL } = {}) {
           } catch (err) {
             return done(err);
           }
-        }
-      )
+        },
+      ),
     );
   }
 
