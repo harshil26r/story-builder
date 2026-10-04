@@ -54,12 +54,12 @@ export async function remove(req, res, next) {
   }
 }
 
-export async function copyTemplate(req, res, next) {
+export async function setGroups(req, res, next) {
   try {
-    const character = await characterService.addCharacterCopyIn(
+    const character = await characterService.setGroups(
       req.user._id,
       req.params.id,
-      req.body.templateCharacterId
+      req.body.groupIds,
     );
     res.json({ character: serialize(character) });
   } catch (err) {
@@ -67,4 +67,17 @@ export async function copyTemplate(req, res, next) {
   }
 }
 
-export default { list, get, create, update, remove, copyTemplate };
+export async function copyTemplate(req, res, next) {
+  try {
+    const character = await characterService.addCharacterCopyIn(
+      req.user._id,
+      req.params.id,
+      req.body.templateCharacterId,
+    );
+    res.json({ character: serialize(character) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export default { list, get, create, update, remove, setGroups, copyTemplate };

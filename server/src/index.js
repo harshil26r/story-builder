@@ -1,7 +1,14 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
-dotenv.config();
 
-import createApp from './app.js';
+// The .env contract lives at the repo root; load it explicitly because
+// `npm -w server run dev` starts this file with server/ as CWD.
+// NOTE: dynamic import so mailer.js & co. (which read env at module scope)
+// are evaluated *after* env vars are set.
+dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env') });
+
+const { default: createApp } = await import('./app.js');
 import connectDB from './config/db.js';
 
 const PORT = process.env.PORT || 5000;

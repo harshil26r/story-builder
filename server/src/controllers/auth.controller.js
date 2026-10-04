@@ -1,8 +1,13 @@
+import bcrypt from 'bcrypt';
 import User from '../models/User.js';
+import OtpToken from '../models/OtpToken.js';
 import otpService from '../services/otpService.js';
+import mailer from '../config/mailer.js';
 import { verifyIdToken } from '../services/googleToken.js';
 import { googleEnabled } from '../config/passport.js';
-import { AppError, errorResponse } from '../utils/errors.js';
+import { AppError } from '../utils/errors.js';
+
+const normalizedEmail = (email) => String(email).toLowerCase().trim();
 
 async function setSession(req, user) {
   req.session.userId = user._id.toString();
@@ -15,31 +20,33 @@ async function setSession(req, user) {
 export async function signup(req, res, next) {
   try {
     const { name, email, password } = req.body;
+    const idEmail = normalizedEmail(email);
 
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ email: idEmail });
     if (existing) {
-      throw new AppError('EMAIL_EXISTS', 'An account with this email already exists.', 409);
+      // Bugfix: an early build created *unverified* users at signup, dead-ending
+      // them (EMAIL_EXISTS on retry with no way to finish verification). Such an
+      // account can hold no session or owned data (login is gated on verified),
+      // so it is safe to replace so the user can complete a clean signup.
+      if (!existing.isEmailVerified) {
+        await existing.deleteOne();
+      } else {
+        throw new AppError('EMAIL_EXISTS', 'An account with this email already exists.', 409);
+      }
     }
 
-    const user = await User.create({
-      name,
-      email,
-      passwordHash: password,
-      isEmailVerified: false,
+    // Hash here (NOT via the User pre-save hook) so only the hash ever sits in
+    // the pending OTP token. The User doc is only created after verification,
+    // so an abandoned or unverified signup leaves nothing behind in the DB.
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await otpService.send(idEmail, 'signup-verify', {
+      mailer,
+      now: Date.now(),
+      data: { name, passwordHash },
     });
 
-    // Phase 1: OTP send is a no-op; Phase 2 sends real code. Fire it but NEVER
-    // let OTP delivery failure (rate-limit cooldown, mailer down) block signup —
-    // the account is created and usable; verification becomes possible once the
-    // OTP path is fully implemented (TICKET-24).
-    try {
-      await otpService.send(email, 'signup-verify', { mailer: null, now: Date.now() });
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('[auth] signup ok, but OTP send failed (non-fatal):', err.code || err.message);
-    }
-
-    // User is created but NOT logged in until verified (Phase 2 gate).
+    // No session yet — verification completes signup (TICKET-24 flow).
     res.status(201).json({ ok: true });
   } catch (err) {
     next(err);
@@ -89,12 +96,129 @@ export async function me(req, res, next) {
   }
 }
 
-// Placeholders — fully implemented in Phase 2/3 (OTP/reset are Phase 2; google
-// routes handled in auth.routes via passport).
-export const sendOtp = (req, res) => res.json({ ok: true });
-export const verifyOtp = (req, res) => res.json({ ok: true });
-export const requestPasswordReset = (req, res) => res.json({ ok: true });
-export const resetPassword = (req, res) => res.json({ ok: true });
+// Resend an OTP. For signup-verify, carries the pending registration payload
+// (name + passwordHash) forward so the user can finish verifying after resend.
+export async function sendOtp(req, res, next) {
+  try {
+    const { email, purpose } = req.body;
+    const idEmail = normalizedEmail(email);
+
+    let data;
+    if (purpose === 'signup-verify') {
+      const pending = await OtpToken.findOne({ email: idEmail, purpose: 'signup-verify' }).sort({
+        createdAt: -1,
+      });
+      if (!pending?.data?.passwordHash) {
+        throw new AppError(
+          'NOT_FOUND',
+          'No pending signup for this email. Please sign up first.',
+          404,
+        );
+      }
+      data = pending.data;
+    }
+
+    await otpService.send(idEmail, purpose, { mailer, now: Date.now(), data });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Verifies the code, then (signup-verify) creates the User — the DB record is
+// only created once the email is proven. Also issues the session.
+export async function verifyOtp(req, res, next) {
+  try {
+    const { email, code, purpose } = req.body;
+    const idEmail = normalizedEmail(email);
+
+    // Read the pending payload BEFORE otpService.verify deletes the token on success.
+    const pendingToken = await OtpToken.findOne({ email: idEmail, purpose }).sort({
+      createdAt: -1,
+    });
+    const pending = pendingToken?.data;
+
+    const ok = await otpService.verify(idEmail, code, purpose);
+    if (!ok) {
+      throw new AppError('OTP_INVALID', 'Incorrect code. Check your email and try again.', 400);
+    }
+
+    let user;
+    if (purpose === 'signup-verify') {
+      if (!pending?.name || !pending?.passwordHash) {
+        throw new AppError('INVALID_STATE', 'This signup has expired. Please sign up again.', 400);
+      }
+      user = await User.create({
+        name: pending.name,
+        email: idEmail,
+        passwordHash: null, // set below, already bcrypt-hashed — avoids re-hashing
+        isEmailVerified: true,
+      });
+      // updateOne bypasses the pre-save hash hook so the stored hash is exact.
+      await User.updateOne({ _id: user._id }, { $set: { passwordHash: pending.passwordHash } });
+    } else {
+      user = await User.findOne({ email: idEmail });
+      if (!user) {
+        throw new AppError('NOT_FOUND', 'No account found for this email.', 404);
+      }
+      user.isEmailVerified = true;
+      await user.save();
+    }
+
+    await setSession(req, user);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Always responds ok (anti-enumeration); OTP sent only when an account exists.
+export async function requestPasswordReset(req, res, next) {
+  try {
+    const { email } = req.body;
+    const idEmail = normalizedEmail(email);
+
+    const user = await User.findOne({ email: idEmail });
+    if (user) {
+      try {
+        await otpService.send(idEmail, 'password-reset', { mailer, now: Date.now() });
+      } catch (err) {
+        // Cooldown/rate-limit — swallow: the user already has a live code.
+        // eslint-disable-next-line no-console
+        console.warn('[auth] password-reset OTP send throttled:', err.code || err.message);
+      }
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resetPassword(req, res, next) {
+  try {
+    const { email, code, newPassword } = req.body;
+    const idEmail = normalizedEmail(email);
+
+    const ok = await otpService.verify(idEmail, code, 'password-reset');
+    if (!ok) {
+      throw new AppError('OTP_INVALID', 'Incorrect code. Check your email and try again.', 400);
+    }
+
+    const user = await User.findOne({ email: idEmail });
+    if (!user) {
+      throw new AppError('NOT_FOUND', 'No account found for this email.', 404);
+    }
+
+    user.passwordHash = newPassword; // pre-save hook bcrypt-hashes on save
+    user.isEmailVerified = true;
+    await user.save();
+
+    await setSession(req, user);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+}
 
 // POST /api/auth/link-google (AUTH + csrf + validated id_token).
 // Attaches googleId to the authenticated account. NEVER clobbers an existing
@@ -118,7 +242,11 @@ export async function linkGoogle(req, res, next) {
 
     // Duplicate link: this account is already connected to a Google identity.
     if (user.googleId) {
-      throw new AppError('ACCOUNT_ALREADY_LINKED', 'This account is already linked to Google.', 409);
+      throw new AppError(
+        'ACCOUNT_ALREADY_LINKED',
+        'This account is already linked to Google.',
+        409,
+      );
     }
 
     // The id_token's `sub` is the Google identity. If another local account
@@ -129,7 +257,7 @@ export async function linkGoogle(req, res, next) {
       throw new AppError(
         'ACCOUNT_ALREADY_LINKED',
         'This Google account is already linked to another Story Builder account.',
-        409
+        409,
       );
     }
 
@@ -145,4 +273,15 @@ export async function linkGoogle(req, res, next) {
   }
 }
 
-export default { signup, login, logout, me, sendOtp, verifyOtp, requestPasswordReset, resetPassword, linkGoogle, googleEnabled };
+export default {
+  signup,
+  login,
+  logout,
+  me,
+  sendOtp,
+  verifyOtp,
+  requestPasswordReset,
+  resetPassword,
+  linkGoogle,
+  googleEnabled,
+};
