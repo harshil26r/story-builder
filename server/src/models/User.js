@@ -1,4 +1,9 @@
-import { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose';
+
+// Node ESM does not expose a named `models` export from mongoose
+// (verified: `import('mongoose')` has Schema/model but no `models`).
+// The compiled-model registry lives on the default export object.
+const { models } = mongoose;
 import bcrypt from 'bcrypt';
 
 // StoryBuilder User — SPEC §1. SPEC §5 model:
@@ -31,10 +36,11 @@ const userSchema = new Schema(
         default: [],
       },
       dayTokens: { type: Number, default: 0 },
+      dayKey: { type: String, default: '' },
       dayBudgetExceededAt: { type: Date, default: null },
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Hopeful/heroic hash rounds per SPEC §5.1 ("bcrypt hash(password, 12)")

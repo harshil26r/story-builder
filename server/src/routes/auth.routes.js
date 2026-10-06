@@ -18,7 +18,9 @@ const router = Router();
 
 // 501 when Google OAuth is not configured (ACR-B-07) — shared by both google routes.
 function notConfigured(_req, res) {
-  return res.status(501).json({ code: 'NOT_CONFIGURED', message: 'Google auth not configured in this deployment.' });
+  return res
+    .status(501)
+    .json({ code: 'NOT_CONFIGURED', message: 'Google auth not configured in this deployment.' });
 }
 
 // CSRF token bootstrap (exempt from CSRF — this IS the token issuer)
@@ -31,10 +33,27 @@ router.post('/signup', authLimiter, validate(signupSchema), authController.signu
 router.post('/login', authLimiter, validate(loginSchema), authController.login);
 
 // OTP
-router.post('/send-otp', authLimiter, sendOtpLimiter, validate(sendOtpSchema), authController.sendOtp);
+router.post(
+  '/send-otp',
+  authLimiter,
+  sendOtpLimiter,
+  validate(sendOtpSchema),
+  authController.sendOtp,
+);
 router.post('/verify-otp', authLimiter, validate(verifyOtpSchema), authController.verifyOtp);
-router.post('/request-password-reset', authLimiter, sendOtpLimiter, validate(sendOtpSchema), authController.requestPasswordReset);
-router.post('/reset-password', authLimiter, validate(resetPasswordSchema), authController.resetPassword);
+router.post(
+  '/request-password-reset',
+  authLimiter,
+  sendOtpLimiter,
+  validate(sendOtpSchema),
+  authController.requestPasswordReset,
+);
+router.post(
+  '/reset-password',
+  authLimiter,
+  validate(resetPasswordSchema),
+  authController.resetPassword,
+);
 
 // Google OAuth (Phase 3) — 501 NOT_CONFIGURED when no GOOGLE_CLIENT_ID (ACR-B-07).
 // The client (GET) and callback (GET) are pre-auth and CSRF-exempt (§3.1).
@@ -57,13 +76,13 @@ if (googleEnabled) {
         }
         req.session.userId = req.user._id.toString();
         await new Promise((resolve, reject) =>
-          req.session.save((err) => (err ? reject(err) : resolve()))
+          req.session.save((err) => (err ? reject(err) : resolve())),
         );
         return res.redirect('/');
       } catch (err) {
         return next(err);
       }
-    }
+    },
   );
 } else {
   router.get('/google', notConfigured);
@@ -71,7 +90,13 @@ if (googleEnabled) {
 }
 
 // Link google account (requires session + csrf)
-router.post('/link-google', authGuard, csrfProtect, validate(linkGoogleSchema), authController.linkGoogle);
+router.post(
+  '/link-google',
+  authGuard,
+  csrfProtect,
+  validate(linkGoogleSchema),
+  authController.linkGoogle,
+);
 
 // Logout + me
 router.post('/logout', csrfProtect, authController.logout);
