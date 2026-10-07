@@ -93,7 +93,7 @@ export async function verifyIdToken(token, { clientID, certsUrl, now } = {}) {
     'RSA-SHA256',
     Buffer.from(signingInput),
     publicKey,
-    Buffer.from(signature, 'base64url')
+    Buffer.from(signature, 'base64url'),
   );
   if (!valid) {
     throw new AppError('VALIDATION_ERROR', 'Google id_token signature invalid.', 400);

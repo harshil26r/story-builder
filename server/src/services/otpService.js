@@ -33,7 +33,7 @@ async function send(email, purpose, opts = {}) {
       throw new AppError(
         'RATE_LIMITED',
         'Please wait 60 seconds before requesting another code.',
-        429
+        429,
       );
     }
   }
@@ -50,7 +50,7 @@ async function send(email, purpose, opts = {}) {
     throw new AppError(
       'RATE_LIMITED',
       'Too many OTP requests for this email. Try again in 15 minutes.',
-      429
+      429,
     );
   }
 
@@ -67,6 +67,7 @@ async function send(email, purpose, opts = {}) {
     expiresAt,
     createdAt: new Date(now),
     attempts: 0,
+    ...(opts.data !== undefined ? { data: opts.data } : {}),
   });
 
   if (mailer && typeof mailer.sendMail === 'function') {
@@ -98,13 +99,13 @@ async function verify(email, code, purpose) {
     throw new AppError(
       'OTP_TOO_MANY_ATTEMPTS',
       'Too many incorrect attempts. Request a new code.',
-      429
+      429,
     );
   }
 
   const ok = crypto.timingSafeEqual(
     Buffer.from(token.otpCodeHash, 'hex'),
-    Buffer.from(sha256Hex(code), 'hex')
+    Buffer.from(sha256Hex(code), 'hex'),
   );
 
   if (ok) {
@@ -120,7 +121,7 @@ async function verify(email, code, purpose) {
     throw new AppError(
       'OTP_TOO_MANY_ATTEMPTS',
       'Too many incorrect attempts. Request a new code.',
-      429
+      429,
     );
   }
 
