@@ -31,9 +31,13 @@ describe('authGuard middleware (TICKET-16)', () => {
     app.get('/test/protected', authGuard, (req, res) => {
       res.json({ ok: true, userId: req.user._id.toString() });
     });
-    app.get('/test/optional', (await import('../middleware/authGuard.js')).optionalAuth, (req, res) => {
-      res.json({ ok: true, user: req.user ? req.user._id.toString() : null });
-    });
+    app.get(
+      '/test/optional',
+      (await import('../middleware/authGuard.js')).optionalAuth,
+      (req, res) => {
+        res.json({ ok: true, user: req.user ? req.user._id.toString() : null });
+      },
+    );
 
     // Login route that sets session.
     app.post('/test/login', async (req, res) => {
