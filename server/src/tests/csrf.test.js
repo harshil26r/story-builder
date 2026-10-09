@@ -17,10 +17,22 @@ function fakeRes() {
     headers: {},
     payload: undefined,
     statusCode: 200,
-    status(code) { this.statusCode = code; return this; },
-    json(payload) { this.payload = payload; return this; },
-    setHeader(k, v) { this.headers[k] = v; return this; },
-    cookie(name, value, opts) { this.cookieOpts = { name, value, opts }; return this; },
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload) {
+      this.payload = payload;
+      return this;
+    },
+    setHeader(k, v) {
+      this.headers[k] = v;
+      return this;
+    },
+    cookie(name, value, opts) {
+      this.cookieOpts = { name, value, opts };
+      return this;
+    },
     locals: {},
   };
   return res;
