@@ -50,7 +50,7 @@ describe('mailer config (TICKET-23)', () => {
     expect(createTransportMock).not.toHaveBeenCalled();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     await expect(
-      transport.sendMail({ to: 'a@b.co', subject: 'OTP', text: '123456' })
+      transport.sendMail({ to: 'a@b.co', subject: 'OTP', text: '123456' }),
     ).resolves.toBeUndefined();
     expect(logSpy).toHaveBeenCalled();
     logSpy.mockRestore();
@@ -61,7 +61,7 @@ describe('mailer config (TICKET-23)', () => {
     expect(typeof mailer.sendMail).toBe('function');
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     await expect(
-      mailer.sendMail({ to: 'x@y.z', subject: 'Test', text: 'abc' })
+      mailer.sendMail({ to: 'x@y.z', subject: 'Test', text: 'abc' }),
     ).resolves.toBeUndefined();
     logSpy.mockRestore();
   });

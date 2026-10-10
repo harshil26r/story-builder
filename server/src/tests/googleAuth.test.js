@@ -67,11 +67,18 @@ describe('google auth — NOT_CONFIGURED (env unset)', () => {
       headers: { 'Content-Type': 'application/json', 'x-csrf-token': value },
       body: JSON.stringify({ email: 'unconf@example.com', password: 'password1' }),
     });
-    const sidCookie = loginRes.headers.getSetCookie().find((c) => c.startsWith('connect.sid=')).split(';')[0];
+    const sidCookie = loginRes.headers
+      .getSetCookie()
+      .find((c) => c.startsWith('connect.sid='))
+      .split(';')[0];
 
     const res = await fetch(`${base}/api/auth/link-google`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-csrf-token': value, Cookie: `${cookie}; ${sidCookie}` },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-csrf-token': value,
+        Cookie: `${cookie}; ${sidCookie}`,
+      },
       body: JSON.stringify({ googleAccessToken: 'some-id-token' }),
     });
     expect(res.status).toBe(501);
@@ -146,7 +153,10 @@ describe('google auth — configured', () => {
       headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf.token },
       body: JSON.stringify({ email: 'linker@example.com', password: 'password1' }),
     });
-    sessionCookie = loginRes.headers.getSetCookie().find((c) => c.startsWith('connect.sid=')).split(';')[0];
+    sessionCookie = loginRes.headers
+      .getSetCookie()
+      .find((c) => c.startsWith('connect.sid='))
+      .split(';')[0];
   });
 
   afterAll(async () => {
@@ -171,7 +181,9 @@ describe('google auth — configured', () => {
     };
     const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
     const signingInput = `${b64(header)}.${b64(payload)}`;
-    const signature = crypto.sign('RSA-SHA256', Buffer.from(signingInput), privateKey).toString('base64url');
+    const signature = crypto
+      .sign('RSA-SHA256', Buffer.from(signingInput), privateKey)
+      .toString('base64url');
     return `${signingInput}.${signature}`;
   }
 
@@ -245,7 +257,9 @@ describe('google auth — configured', () => {
       iat: now,
     };
     const signingInput = `${b64(header)}.${b64(payload)}`;
-    const signature = crypto.sign('RSA-SHA256', Buffer.from(signingInput), otherPair.privateKey).toString('base64url');
+    const signature = crypto
+      .sign('RSA-SHA256', Buffer.from(signingInput), otherPair.privateKey)
+      .toString('base64url');
     const badToken = `${signingInput}.${signature}`;
 
     const res = await fetch(`${base}/api/auth/link-google`, {

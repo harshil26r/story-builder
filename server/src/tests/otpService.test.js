@@ -87,7 +87,7 @@ describe('otpService (TICKET-24)', () => {
     await otpService.send(EMAIL, 'signup-verify', { mailer, now });
 
     await expect(
-      otpService.send(EMAIL, 'signup-verify', { mailer, now: now + 10_000 })
+      otpService.send(EMAIL, 'signup-verify', { mailer, now: now + 10_000 }),
     ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
 
     await OtpToken.deleteMany({ email: EMAIL });
@@ -106,7 +106,7 @@ describe('otpService (TICKET-24)', () => {
     }
     // 6th send within 15min from the first → rate limited.
     await expect(
-      otpService.send(EMAIL, 'signup-verify', { mailer, now: now + 6 * 60_000 })
+      otpService.send(EMAIL, 'signup-verify', { mailer, now: now + 6 * 60_000 }),
     ).rejects.toMatchObject({ code: 'RATE_LIMITED', status: 429 });
 
     await OtpToken.deleteMany({ email: EMAIL });

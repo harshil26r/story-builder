@@ -51,7 +51,7 @@ describe('OtpToken model (TICKET-22)', () => {
         otpCodeHash: 'a'.repeat(64),
         purpose: 'not-a-purpose',
         expiresAt: new Date(),
-      })
+      }),
     ).rejects.toThrow();
   });
 });
