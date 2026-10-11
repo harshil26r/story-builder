@@ -26,8 +26,14 @@ function fakeRes() {
   return {
     statusCode: 200,
     headers: {},
-    status(c) { this.statusCode = c; return this; },
-    setHeader(k, v) { this.headers[k] = v; return this; },
+    status(c) {
+      this.statusCode = c;
+      return this;
+    },
+    setHeader(k, v) {
+      this.headers[k] = v;
+      return this;
+    },
     end() {},
     json() {},
     redirect() {},
@@ -131,11 +137,16 @@ describe('passport config (TICKET-27)', () => {
     await User.deleteOne({ email: 'new-google@example.com' });
     const google = passport._strategy('google');
     const result = await new Promise((resolve, reject) => {
-      google._verify('acc', 'ref', {
-        id: 'google-user-new',
-        displayName: 'New Google',
-        emails: [{ value: 'new-google@example.com' }],
-      }, (err, user) => (err ? reject(err) : resolve(user)));
+      google._verify(
+        'acc',
+        'ref',
+        {
+          id: 'google-user-new',
+          displayName: 'New Google',
+          emails: [{ value: 'new-google@example.com' }],
+        },
+        (err, user) => (err ? reject(err) : resolve(user)),
+      );
     });
     expect(result).toBeTruthy();
     expect(result.googleId).toBe('google-user-new');
@@ -160,11 +171,16 @@ describe('passport config (TICKET-27)', () => {
 
     const google = passport._strategy('google');
     const result = await new Promise((resolve, reject) => {
-      google._verify('acc', 'ref', {
-        id: 'google-user-dual',
-        displayName: 'Dual Auth',
-        emails: [{ value: 'dualauth@example.com' }],
-      }, (err, user) => (err ? reject(err) : resolve(user)));
+      google._verify(
+        'acc',
+        'ref',
+        {
+          id: 'google-user-dual',
+          displayName: 'Dual Auth',
+          emails: [{ value: 'dualauth@example.com' }],
+        },
+        (err, user) => (err ? reject(err) : resolve(user)),
+      );
     });
     expect(result.googleId).toBe('google-user-dual');
     expect(result.passwordHash).toBeTruthy(); // preserved

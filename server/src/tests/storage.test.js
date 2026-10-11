@@ -35,7 +35,7 @@ describe('storage (TICKET-30)', () => {
     // Minimal valid 1x1 transparent PNG
     return Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      'base64'
+      'base64',
     );
   }
 
@@ -105,9 +105,9 @@ describe('storage (TICKET-30)', () => {
   describe('Magic-byte validation', () => {
     it('rejects non-image buffer for avatars folder with INVALID_FILE error', async () => {
       const file = { buffer: textBuffer(), mimetype: 'text/plain', size: textBuffer().length };
-      await expect(
-        storage.upload(file, { folder: 'avatars' })
-      ).rejects.toMatchObject({ code: 'INVALID_FILE' });
+      await expect(storage.upload(file, { folder: 'avatars' })).rejects.toMatchObject({
+        code: 'INVALID_FILE',
+      });
     });
 
     it('accepts valid PNG for avatars folder', async () => {
@@ -121,9 +121,9 @@ describe('storage (TICKET-30)', () => {
 
     it('rejects non-image buffer for covers folder with INVALID_FILE error', async () => {
       const file = { buffer: textBuffer(), mimetype: 'text/plain', size: textBuffer().length };
-      await expect(
-        storage.upload(file, { folder: 'covers' })
-      ).rejects.toMatchObject({ code: 'INVALID_FILE' });
+      await expect(storage.upload(file, { folder: 'covers' })).rejects.toMatchObject({
+        code: 'INVALID_FILE',
+      });
     });
   });
 
@@ -138,7 +138,7 @@ describe('storage (TICKET-30)', () => {
       process.env.CLOUDINARY_URL = 'cloudinary://key:secret@demo';
 
       // Re-import storage with Cloudinary enabled.
-    //   vi.resetModules();
+      //   vi.resetModules();
       const freshStorage = await import('../services/storage.js');
       const svc = freshStorage.default || freshStorage;
 

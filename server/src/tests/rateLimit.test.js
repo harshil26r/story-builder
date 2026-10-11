@@ -9,10 +9,21 @@ function fakeRes() {
     statusCode: 200,
     headers: {},
     payload: undefined,
-    status(code) { this.statusCode = code; return this; },
-    json(payload) { this.payload = payload; return this; },
-    setHeader(k, v) { this.headers[k] = v; return this; },
-    getHeader(k) { return this.headers[k]; },
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload) {
+      this.payload = payload;
+      return this;
+    },
+    setHeader(k, v) {
+      this.headers[k] = v;
+      return this;
+    },
+    getHeader(k) {
+      return this.headers[k];
+    },
   };
   return res;
 }

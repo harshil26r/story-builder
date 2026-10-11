@@ -25,9 +25,17 @@ describe('Joi validation schemas (TICKET-09)', () => {
     });
 
     it('rejects weak password (no letter or no number)', () => {
-      const noLetter = signupSchema.validate({ name: 'Ada', email: 'a@b.co', password: '12345678' });
+      const noLetter = signupSchema.validate({
+        name: 'Ada',
+        email: 'a@b.co',
+        password: '12345678',
+      });
       expect(noLetter.error).toBeDefined();
-      const noNumber = signupSchema.validate({ name: 'Ada', email: 'a@b.co', password: 'abcdefgh' });
+      const noNumber = signupSchema.validate({
+        name: 'Ada',
+        email: 'a@b.co',
+        password: 'abcdefgh',
+      });
       expect(noNumber.error).toBeDefined();
     });
   });
