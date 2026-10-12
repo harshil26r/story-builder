@@ -30,3 +30,6 @@ npm-debug.log*
 # agents
 
 docs/
+
+# workflow local state (issue/branch/worktree/review/pr artifacts)
+.workflow/

@@ -1,0 +1,54 @@
+name: Task
+description: Story Builder issue — implement via the numbered workflow.
+title: "[type] "
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every issue flows through: acknowledge → implement (TDD) → test →
+        independent review (different model) → PR (with description) → merge.
+        Keep one logical change per issue.
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - feature
+        - bug
+        - chore
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What problem does this solve, and why now?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Objective, testable statements. Use a checklist.
+      value: |
+        - [ ] 
+    validations:
+      required: true
+  - type: textarea
+    id: test-plan
+    attributes:
+      label: Test plan
+      description: Tests or manual steps that prove the criteria.
+      value: |
+        - [ ] 
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      value: |
+        - 
+    validations:
+      required: false
