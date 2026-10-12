@@ -16,7 +16,7 @@ const TEST_MONGO = 'mongodb://127.0.0.1/story-builder-test-upload';
 function pngBuffer() {
   return Buffer.from(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-    'base64'
+    'base64',
   );
 }
 
@@ -55,7 +55,10 @@ describe('Upload routes (TICKET-31)', () => {
       headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf.token },
       body: JSON.stringify({ email: 'uploader@example.com', password: 'password1' }),
     });
-    sessionCookie = loginRes.headers.getSetCookie().find((c) => c.startsWith('connect.sid=')).split(';')[0];
+    sessionCookie = loginRes.headers
+      .getSetCookie()
+      .find((c) => c.startsWith('connect.sid='))
+      .split(';')[0];
   });
 
   afterEach(() => {

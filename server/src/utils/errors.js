@@ -27,6 +27,12 @@ export class ConflictError extends AppError {
   }
 }
 
+export class StoryIncompleteError extends AppError {
+  constructor(message = 'This story has no content to export yet.') {
+    super('STORY_INCOMPLETE', message, 409);
+  }
+}
+
 export function errorResponse(err) {
   if (err instanceof AppError) {
     return {
@@ -59,4 +65,4 @@ export function errorResponse(err) {
   };
 }
 
-export default { AppError, NotFoundError, ConflictError, errorResponse };
+export default { AppError, NotFoundError, ConflictError, StoryIncompleteError, errorResponse };

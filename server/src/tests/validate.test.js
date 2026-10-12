@@ -6,8 +6,14 @@ function fakeRes() {
   const res = {
     payload: undefined,
     statusCode: 200,
-    status(code) { this.statusCode = code; return this; },
-    json(payload) { this.payload = payload; return this; },
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload) {
+      this.payload = payload;
+      return this;
+    },
   };
   return res;
 }
@@ -24,12 +30,16 @@ describe('validate middleware (TICKET-15)', () => {
     expect(res.payload.code).toBe('VALIDATION_ERROR');
     // abortEarly:false collects ALL errors
     expect(res.payload.fields.length).toBe(2);
-    expect(res.payload.fields.every((f) => typeof f.field === 'string' && typeof f.message === 'string')).toBe(true);
+    expect(
+      res.payload.fields.every((f) => typeof f.field === 'string' && typeof f.message === 'string'),
+    ).toBe(true);
     expect(next).not.toHaveBeenCalled();
   });
 
   it('strips unknown keys and mutates req.body to the validated value', () => {
-    const req = { body: { name: 'Ada', email: 'ADA@EXAMPLE.COM', password: 'password1', evil: 'x' } };
+    const req = {
+      body: { name: 'Ada', email: 'ADA@EXAMPLE.COM', password: 'password1', evil: 'x' },
+    };
     const res = fakeRes();
     const next = vi.fn();
     validate(signupSchema)(req, res, next);

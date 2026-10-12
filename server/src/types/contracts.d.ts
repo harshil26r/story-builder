@@ -14,8 +14,7 @@ declare namespace StoryBuilder {
   type CharacterRole = 'protagonist' | 'antagonist' | 'side' | 'mentor' | 'supporting';
   type OtpPurpose = 'signup-verify' | 'login' | 'password-reset';
   type RelationshipType =
-    | 'friend' | 'rival' | 'sibling' | 'mentor' | 'parent'
-    | 'spouse' | 'enemy' | 'secret-ally';
+    'friend' | 'rival' | 'sibling' | 'mentor' | 'parent' | 'spouse' | 'enemy' | 'secret-ally';
   type ContentMode = 'ai' | 'user';
 
   interface User {

@@ -87,7 +87,7 @@ graph TD
     - `Node`: `id: string`, `storyId: string`, `title: string`, `content: string`, `characters: string[]`, `isStartNode: boolean`, `createdAt: string`, `updatedAt: string`.
     - `Link`: `id: string`, `sourceNodeId: string`, `targetNodeId: string`, `label: string`, `condition?: string`.
     - `Story`: `id: string`, `title: string`, `authorId: string`, `description: string`, `published: boolean`, `nodes: Node[]`, `links: Link[]`, `createdAt: string`, `updatedAt: string`.
-    Create a unit test `client/src/tests/storyModels.test.ts` validating shape conforming, optional properties, and type assertions.
+      Create a unit test `client/src/tests/storyModels.test.ts` validating shape conforming, optional properties, and type assertions.
   - **TDD Criteria**:
     - `tsc --noEmit` passes without errors on `client/src/types/story.ts`.
     - Test in `client/src/tests/storyModels.test.ts` verifies valid instantiations of `Character`, `Node`, `Link`, and `Story`.
@@ -112,7 +112,7 @@ graph TD
       - `createLink` sends payload without `id` and returns `{ data: createdLink, status: 201 }`.
       - Network failure returns `{ error: 'Network error', status: 500 }`.
 
-- [ ] **[TICKET-06] [frontend] Implement StoryNode and StoryLink Canvas Child Components**
+- [x] **[TICKET-06] [frontend] Implement StoryNode and StoryLink Canvas Child Components**
   - **Target Files**: `client/src/components/stories/StoryNode.tsx`, `client/src/components/stories/StoryLink.tsx`, `client/src/tests/StoryNode.test.tsx`
   - **Prerequisites**: `[TICKET-04]`
   - **Description**:
@@ -132,7 +132,7 @@ graph TD
     - Verifies clicking node invokes `onClick` with `node.id`.
     - Verifies `StoryLink` renders label text.
 
-- [ ] **[TICKET-07] [frontend] Implement CanvasView and Sidebar Component Layouts**
+- [x] **[TICKET-07] [frontend] Implement CanvasView and Sidebar Component Layouts**
   - **Target Files**: `client/src/components/stories/CanvasView.tsx`, `client/src/components/stories/Sidebar.tsx`, `client/src/components/stories/NodeDetailsEditor.tsx`, `client/src/components/stories/CharacterManager.tsx`, `client/src/tests/CanvasView.test.tsx`
   - **Prerequisites**: `[TICKET-04]`, `[TICKET-06]`
   - **Description**:
@@ -151,7 +151,7 @@ graph TD
     - `Sidebar` renders `NodeDetailsEditor` with selected node data.
     - `Sidebar` renders `CharacterManager` with character list.
 
-- [ ] **[TICKET-08] [frontend] Implement StoryEditor Page with 4 UI States**
+- [x] **[TICKET-08] [frontend] Implement StoryEditor Page with 4 UI States**
   - **Target Files**: `client/src/components/stories/StoryEditor.tsx`, `client/src/tests/StoryEditorStates.test.tsx`
   - **Prerequisites**: `[TICKET-04]`, `[TICKET-05]`, `[TICKET-07]`
   - **Description**:
@@ -175,7 +175,7 @@ graph TD
       - `it('renders error message and Retry button when status is error')`: asserts "Failed to load story." is displayed; clicking "Retry" calls fetch again.
       - `it('renders CanvasView and Sidebar when status is success and nodes exist')`: asserts node elements are present in DOM.
 
-- [ ] **[TICKET-09] [frontend] Verify Client Dev Server Renders /src/main.tsx and React Components Mount Across 4 UI States**
+- [x] **[TICKET-09] [frontend] Verify Client Dev Server Renders /src/main.tsx and React Components Mount Across 4 UI States**
   - **Target Files**: `client/src/tests/clientDevMount.test.tsx`
   - **Prerequisites**: `[TICKET-01]`, `[TICKET-03]`, `[TICKET-08]`
   - **Description**:

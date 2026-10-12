@@ -12,14 +12,24 @@ const POVS = ['1st', '2nd', '3rd'];
 const STRUCTURE_TYPES = ['single', 'linear', 'branching'];
 const GENERATION_MODES = ['full-ai', 'ai-enhanced'];
 const STORY_STATUSES = ['draft', 'complete'];
-const CHARACTER_ROLES = ['protagonist', 'antagonist', 'side', 'mentor', 'supporting'];
+const CHARACTER_ROLES = ['protagonist', 'antagonist', 'side', 'mentor', 'supporting', 'neutral'];
 const OTP_PURPOSES = ['signup-verify', 'login', 'password-reset'];
 const RELATIONSHIP_TYPES = [
-  'friend', 'rival', 'sibling', 'mentor', 'parent',
-  'spouse', 'enemy', 'secret-ally',
+  'friend',
+  'rival',
+  'sibling',
+  'mentor',
+  'parent',
+  'spouse',
+  'enemy',
+  'secret-ally',
 ];
 
-const email = Joi.string().max(254).regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/).lowercase().required();
+const email = Joi.string()
+  .max(254)
+  .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+  .lowercase()
+  .required();
 
 // ── Shared ───────────────────────────────────────────────────────────────────
 export const okSchema = Joi.object({ ok: Joi.boolean().valid(true).required() });
@@ -28,7 +38,9 @@ export const okSchema = Joi.object({ ok: Joi.boolean().valid(true).required() })
 export const signupSchema = Joi.object({
   name: Joi.string().trim().min(1).max(80).required(),
   email,
-  password: Joi.string().min(8).max(128)
+  password: Joi.string()
+    .min(8)
+    .max(128)
     .pattern(/[A-Za-z]/, 'letter')
     .pattern(/[0-9]/, 'number')
     .required(),
@@ -36,13 +48,19 @@ export const signupSchema = Joi.object({
 
 export const sendOtpSchema = Joi.object({
   email,
-  purpose: Joi.string().valid(...OTP_PURPOSES).required(),
+  purpose: Joi.string()
+    .valid(...OTP_PURPOSES)
+    .required(),
 });
 
 export const verifyOtpSchema = Joi.object({
   email,
-  code: Joi.string().pattern(/^\d{6}$/).required(),
-  purpose: Joi.string().valid(...OTP_PURPOSES).required(),
+  code: Joi.string()
+    .pattern(/^\d{6}$/)
+    .required(),
+  purpose: Joi.string()
+    .valid(...OTP_PURPOSES)
+    .required(),
 });
 
 export const loginSchema = Joi.object({
@@ -52,8 +70,12 @@ export const loginSchema = Joi.object({
 
 export const resetPasswordSchema = Joi.object({
   email,
-  code: Joi.string().pattern(/^\d{6}$/).required(),
-  newPassword: Joi.string().min(8).max(128)
+  code: Joi.string()
+    .pattern(/^\d{6}$/)
+    .required(),
+  newPassword: Joi.string()
+    .min(8)
+    .max(128)
     .pattern(/[A-Za-z]/, 'letter')
     .pattern(/[0-9]/, 'number')
     .required(),
@@ -77,11 +99,20 @@ export const characterInputSchema = Joi.object({
   dislikes: stringArray(12, 100).required(),
   habits: Joi.string().trim().max(1000).allow(''),
   backstory: Joi.string().trim().max(5000).allow(''),
-  role: Joi.string().valid(...CHARACTER_ROLES).required(),
-  relationships: Joi.array().items(Joi.object({
-    characterId: id.required(),
-    relationType: Joi.string().valid(...RELATIONSHIP_TYPES).required(),
-  })).max(50).default([]),
+  role: Joi.string()
+    .valid(...CHARACTER_ROLES)
+    .required(),
+  relationships: Joi.array()
+    .items(
+      Joi.object({
+        characterId: id.required(),
+        relationType: Joi.string()
+          .valid(...RELATIONSHIP_TYPES)
+          .required(),
+      }),
+    )
+    .max(50)
+    .default([]),
   voiceStyle: Joi.string().trim().max(500).allow(''),
   catchphrases: stringArray(6, 80),
   arc: Joi.string().trim().max(2000).allow(''),
@@ -90,30 +121,89 @@ export const characterInputSchema = Joi.object({
   isTemplate: Joi.boolean().default(false),
 });
 
-// ── Character (Phase 4 CRUD contract — parent briefing) ──────────────────────
-// Mirrors the Character model in models/Character.js: name, description,
-// voiceStyle, role (default 'neutral'), avatarUrl, templateSource.
+// ── Character (SPEC §2.3 CharacterInput — full character sheet) ─────────────
+// Mirrors the rich `Character` model: name, age, gender, appearance,
+// personality[], likes[], dislikes[], habits, backstory, role, avatarUrl,
+// relationships[], voiceStyle, catchphrases[], arc, secretTrait,
+// secretRevealChapter, isTemplate (+ internal description/templateSource).
+const tagArray = (maxItems, maxLength) =>
+  Joi.array().items(Joi.string().trim().max(maxLength)).max(maxItems);
+
 export const characterCreateSchema = Joi.object({
   name: Joi.string().trim().min(1).max(100).required(),
-  description: Joi.string().trim().max(2000).allow('').default(''),
-  voiceStyle: Joi.string().trim().max(500).allow('').default(''),
-  role: Joi.string().valid('protagonist', 'antagonist', 'supporting', 'neutral').default('neutral'),
+  age: Joi.number().integer().min(0).max(150).allow(null).default(null),
+  gender: Joi.string().trim().max(80).allow('').default(''),
+  appearance: Joi.string().trim().max(5000).allow('').default(''),
+  personality: tagArray(12, 100).default([]),
+  likes: tagArray(12, 100).default([]),
+  dislikes: tagArray(12, 100).default([]),
+  habits: Joi.string().trim().max(2000).allow('').default(''),
+  backstory: Joi.string().trim().max(5000).allow('').default(''),
+  role: Joi.string()
+    .valid(...CHARACTER_ROLES)
+    .default('neutral'),
   avatarUrl: Joi.string().trim().max(2000).allow(null).default(null),
+  relationships: Joi.array()
+    .items(
+      Joi.object({
+        characterId: id.required(),
+        relationType: Joi.string()
+          .valid(...RELATIONSHIP_TYPES)
+          .required(),
+      }),
+    )
+    .default([]),
+  voiceStyle: Joi.string().trim().max(500).allow('').default(''),
+  catchphrases: tagArray(6, 80).default([]),
+  arc: Joi.string().trim().max(2000).allow('').default(''),
+  secretTrait: Joi.string().trim().max(2000).allow('').default(''),
+  secretRevealChapter: Joi.number().integer().min(1).allow(null).default(null),
+  isTemplate: Joi.boolean().default(false),
+  description: Joi.string().trim().max(2000).allow('').default(''),
   templateSource: id.allow(null).default(null),
 });
 
 export const characterUpdateSchema = Joi.object({
   name: Joi.string().trim().min(1).max(100),
-  description: Joi.string().trim().max(2000).allow(''),
-  voiceStyle: Joi.string().trim().max(500).allow(''),
-  role: Joi.string().valid('protagonist', 'antagonist', 'supporting', 'neutral'),
+  age: Joi.number().integer().min(0).max(150).allow(null),
+  gender: Joi.string().trim().max(80).allow(''),
+  appearance: Joi.string().trim().max(5000).allow(''),
+  personality: tagArray(12, 100),
+  likes: tagArray(12, 100),
+  dislikes: tagArray(12, 100),
+  habits: Joi.string().trim().max(2000).allow(''),
+  backstory: Joi.string().trim().max(5000).allow(''),
+  role: Joi.string().valid(...CHARACTER_ROLES),
   avatarUrl: Joi.string().trim().max(2000).allow(null),
+  relationships: Joi.array().items(
+    Joi.object({
+      characterId: id.required(),
+      relationType: Joi.string()
+        .valid(...RELATIONSHIP_TYPES)
+        .required(),
+    }),
+  ),
+  voiceStyle: Joi.string().trim().max(500).allow(''),
+  catchphrases: tagArray(6, 80),
+  arc: Joi.string().trim().max(2000).allow(''),
+  secretTrait: Joi.string().trim().max(2000).allow(''),
+  secretRevealChapter: Joi.number().integer().min(1).allow(null),
+  isTemplate: Joi.boolean(),
+  description: Joi.string().trim().max(2000).allow(''),
   templateSource: id.allow(null),
 }).min(1);
 
 export const characterCopyTemplateSchema = Joi.object({
   templateCharacterId: id.required(),
 });
+
+export const characterGroupNameSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(80).required(),
+});
+
+export const characterGroupsSchema = Joi.object({
+  groupIds: Joi.array().items(id).default([]),
+}).min(1);
 
 // ── Story (SPEC 2.4) ─────────────────────────────────────────────────────────
 const lengthTargetPattern = Joi.alternatives().try(
@@ -128,9 +218,15 @@ export const storyCreateSchema = Joi.object({
   tone: Joi.string().trim().min(1).max(80).default('neutral'),
   targetAudience: Joi.string().trim().min(1).max(80).default('general'),
   lengthTarget: lengthTargetPattern.default('medium'),
-  pov: Joi.string().valid(...POVS).required(),
-  structureType: Joi.string().valid(...STRUCTURE_TYPES).required(),
-  generationMode: Joi.string().valid(...GENERATION_MODES).required(),
+  pov: Joi.string()
+    .valid(...POVS)
+    .required(),
+  structureType: Joi.string()
+    .valid(...STRUCTURE_TYPES)
+    .required(),
+  generationMode: Joi.string()
+    .valid(...GENERATION_MODES)
+    .required(),
   characterIds: Joi.array().items(id).max(20).default([]),
   disclaimerText: Joi.string().trim().max(2000).allow(''),
 });
@@ -146,6 +242,7 @@ export const storyUpdateSchema = Joi.object({
   generationMode: Joi.string().valid(...GENERATION_MODES),
   characterIds: Joi.array().items(id).max(20),
   disclaimerText: Joi.string().trim().max(2000).allow(''),
+  coverImageUrl: Joi.string().trim().max(2000).allow(''),
   isPublic: Joi.boolean(),
   status: Joi.string().valid(...STORY_STATUSES),
   baseVersion: Joi.number().integer().min(-1),
@@ -155,11 +252,13 @@ export const regenerateChapterSchema = Joi.object({
   chapterId: id.required(),
   mode: Joi.string().valid('only', 'onward').required(),
   baseVersion: Joi.number().integer().min(-1),
+  resumeGenerationId: Joi.string().max(100),
 });
 
 export const continueSchema = Joi.object({
   chaptersCount: Joi.number().integer().min(1).max(10),
   baseVersion: Joi.number().integer().min(-1),
+  resumeGenerationId: Joi.string().max(100),
 });
 
 export const publishSchema = Joi.object({
@@ -167,6 +266,12 @@ export const publishSchema = Joi.object({
 });
 
 // ── Branching / Node (SPEC 2.6) ──────────────────────────────────────────────
+export const chapterContentUpdateSchema = Joi.object({
+  content: Joi.string().trim().max(60000).allow(''),
+  summary: Joi.string().trim().max(2000).allow(''),
+  baseVersion: Joi.number().integer().min(-1),
+}).min(1);
+
 export const nodeCreateSchema = Joi.object({
   parentId: id.allow(null),
   title: Joi.string().trim().min(1).max(120),
@@ -238,11 +343,14 @@ export default {
   characterCreateSchema,
   characterUpdateSchema,
   characterCopyTemplateSchema,
+  characterGroupNameSchema,
+  characterGroupsSchema,
   storyCreateSchema,
   storyUpdateSchema,
   regenerateChapterSchema,
   continueSchema,
   publishSchema,
+  chapterContentUpdateSchema,
   nodeCreateSchema,
   nodeUpdateSchema,
   choiceCreateSchema,

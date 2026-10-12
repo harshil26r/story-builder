@@ -42,7 +42,7 @@ describe('User model (TICKET-11)', () => {
   it('enforces unique email via MongoServerError code 11000', async () => {
     await User.create({ name: 'Dup', email: 'dup@example.com', passwordHash: 'password1' });
     await expect(
-      User.create({ name: 'Dup2', email: 'dup@example.com', passwordHash: 'password2' })
+      User.create({ name: 'Dup2', email: 'dup@example.com', passwordHash: 'password2' }),
     ).rejects.toMatchObject({ code: 11000 });
     await User.deleteMany({ email: 'dup@example.com' });
   });
