@@ -90,6 +90,15 @@ else
   log "skipping npm install (--no-install)"
 fi
 
+# 3b. install-script policy (npm >= 12 blocks dependency install scripts) -----
+if [[ "$NO_INSTALL" == 0 ]] && has_cmd npm; then
+  if npm install-scripts ls 2>/dev/null | grep -qi "blocked"; then
+    warn "npm blocked install scripts for some dependencies (e.g. bcrypt, esbuild)."
+    warn "Approve the project allowlist, then rebuild:"
+    warn "  npm install-scripts approve --all && npm rebuild"
+  fi
+fi
+
 # 4. MongoDB ------------------------------------------------------------------
 get_mongo_hostport() {
   local uri hostport host port
