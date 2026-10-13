@@ -361,7 +361,8 @@ async function runGeneration({ job, io, story, characters, resumeFrom, persist }
   }
 
   job.text = fullText;
-  summary = await generateSummary(fullText || '');
+  summary = await generateSummary(fullText || '', { signal: job.abort.signal });
+  if (job.abort.signal.aborted) return; // client disconnected during summary — skip commit
   emit(io, 'snapshot', { jobId: job.id, chapterIndex: job.chapterIndex, fullTextSoFar: fullText });
   emit(io, 'summary', { summary });
 

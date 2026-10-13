@@ -13,6 +13,9 @@ let textChunks = [];
 let capturedSignal = null;
 let slowChunks = false;
 let emptyFinish = false;
+let capturedSummaryOpts = null;
+let slowSummary = false;
+let summaryAbortController = null; // allows tests to abort exactly when summary starts
 
 const fakeClient = {
   messages: {
@@ -45,8 +48,16 @@ const fakeClient = {
       }
       return gen();
     },
-    create() {
-      return Promise.resolve({ content: [{ type: 'text', text: 'Test summary.' }] });
+    async create(_body, opts) {
+      capturedSummaryOpts = opts || null;
+      // If a summaryAbortController is set, abort it as soon as summary starts
+      // (simulates client disconnecting exactly when summary begins).
+      if (summaryAbortController) {
+        summaryAbortController.abort();
+        summaryAbortController = null;
+      }
+      if (slowSummary) await new Promise((r) => setTimeout(r, 20));
+      return { content: [{ type: 'text', text: 'Test summary.' }] };
     },
   },
 };
@@ -103,6 +114,9 @@ describe('aiService generateChapter (TICKET-52)', () => {
     capturedSignal = null;
     slowChunks = false;
     emptyFinish = false;
+    capturedSummaryOpts = null;
+    slowSummary = false;
+    summaryAbortController = null;
     textChunks = ['Once upon a time, ', 'the lamps ', 'went out forever.'];
     story = await Story.create({
       userId,
@@ -275,5 +289,39 @@ describe('aiService generateChapter (TICKET-52)', () => {
       { io: third, signal: new AbortController().signal },
     );
     expect(eventData(third.events, 'error').code).toBe('RESUME_EXHAUSTED');
+  });
+
+  // Issue #9: fix(server): propagate abort signal to generateSummary in linear chapter generation
+  it('passes the job abort signal to generateSummary during linear generation', async () => {
+    const io = recordingIo();
+    await aiService.generateChapter(
+      { userId: String(userId), storyId: String(story._id), chapterIndex: 1 },
+      { io, signal: new AbortController().signal },
+    );
+
+    expect(eventData(io.events, 'done')).toBeTruthy();
+    // The summary create() call must have received an options object with a signal
+    expect(capturedSummaryOpts).not.toBeNull();
+    expect(capturedSummaryOpts.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('does not commit a chapter when client aborts while summary is in flight', async () => {
+    // Wire an AbortController so that the external signal fires the moment
+    // the fake summary provider starts (create() is called). This makes the
+    // timing deterministic: the abort is guaranteed to happen AFTER the stream
+    // finishes but BEFORE generateSummary returns.
+    const ac = new AbortController();
+    summaryAbortController = ac; // create() will call ac.abort() synchronously
+    slowSummary = true; // ensures the await inside create() gives the abort check time
+    const io = recordingIo();
+
+    await aiService.generateChapter(
+      { userId: String(userId), storyId: String(story._id), chapterIndex: 1 },
+      { io, signal: ac.signal },
+    );
+
+    expect(eventData(io.events, 'done')).toBeNull();
+    expect(eventData(io.events, 'error')).toBeNull();
+    expect(await Chapter.countDocuments({ storyId: story._id })).toBe(0);
   });
 });
