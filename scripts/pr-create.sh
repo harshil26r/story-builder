@@ -88,6 +88,20 @@ mkdir -p "$(pr_dir "$ROOT")"
 body="$(pr_dir "$ROOT")/issue-${ISSUE}.md"
 review="$(reviews_dir "$ROOT")/issue-${ISSUE}.md"
 
+# GitHub rejects PR bodies over 65,536 characters. Cap the embedded review so a
+# verbose report cannot break PR creation.
+MAX_REVIEW_CHARS=50000
+MAX_BODY_BYTES=60000
+review_body=""
+if [[ -f "$review" ]]; then
+  review_body="$(cat "$review")"
+  if (( ${#review_body} > MAX_REVIEW_CHARS )); then
+    review_body="${review_body:0:MAX_REVIEW_CHARS}"
+    review_body+=$'\n\n_…embedded review truncated to fit GitHub'"'"'s PR body limit._'
+    warn "embedded review truncated to ${MAX_REVIEW_CHARS} chars"
+  fi
+fi
+
 {
   printf '## Summary\n\n%s\n\nCloses #%s\n\n' "$TITLE" "$ISSUE"
   printf '## Changes\n\n'
@@ -96,16 +110,20 @@ review="$(reviews_dir "$ROOT")/issue-${ISSUE}.md"
   printf -- '- [x] `npm test` (server + client Vitest)\n'
   printf -- '- [x] `npm run typecheck`\n'
   printf -- '- [x] `npm run lint`\n'
-  if [[ -f "$review" ]]; then
+  if [[ -n "$review_body" ]]; then
     printf '\n## Independent review\n\n_Model: %s (read-only reviewer)._\n\n' "$(reviewer_model)"
-    cat "$review"
-    printf '\n'
+    printf '%s\n' "$review_body"
   fi
   printf '\n## Risk & rollback\n\n'
   printf -- '- Risk: low; scoped to issue #%s.\n' "$ISSUE"
   printf -- '- Rollback: revert this PR (`git revert -m 1 <merge-sha>`).\n'
 } >"$body"
-ok "wrote PR body: $body"
+
+body_bytes="$(wc -c <"$body")"
+if (( body_bytes > MAX_BODY_BYTES )); then
+  die "generated PR body is ${body_bytes} bytes (GitHub limit 65536); trim $(reviews_dir "$ROOT")/issue-${ISSUE}.md"
+fi
+ok "wrote PR body: $body (${body_bytes} bytes)"
 
 args=(pr create --base "$BASE" --head "$branch" --title "$TITLE" --body-file "$body" --label "status:review" --label "status:pr")
 if [[ "$DRAFT" == 1 ]]; then args+=(--draft); fi
