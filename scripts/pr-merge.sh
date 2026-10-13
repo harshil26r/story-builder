@@ -12,25 +12,30 @@ METHOD="squash"
 YES=0
 KEEP_WORKTREE=0
 DELETE_BRANCH=1
+ISSUE_OVERRIDE=""
 
 usage() {
   cat <<'EOF'
 Usage: scripts/pr-merge.sh <issue-number|pr-number|pr-url> [options]
 
   --method M        squash | merge | rebase (default: squash)
+  --issue N         Explicit issue number for worktree cleanup (default: derive
+                    from the PR head branch, e.g. issue/<n>-<slug>)
   --keep-worktree   Do not remove the issue worktree after merging
   --keep-branch     Do not delete the remote branch
   --yes             Required: actually perform the merge
   -h, --help        Show this help
 
 Before merging it prints the PR checks. On success it fast-forwards local
-`main` and removes the issue worktree.
+`main` and removes the worktree of the issue the PR was opened for. The numeric
+argument is always the PR number; the issue is derived from the head branch.
 EOF
 }
 
 while (($#)); do
   case "$1" in
     --method) METHOD="$2"; shift 2 ;;
+    --issue) ISSUE_OVERRIDE="$2"; shift 2 ;;
     --keep-worktree) KEEP_WORKTREE=1; shift ;;
     --keep-branch) DELETE_BRANCH=0; shift ;;
     --yes) YES=1; shift ;;
@@ -51,17 +56,28 @@ case "$METHOD" in
   *) die "invalid --method '$METHOD'" ;;
 esac
 require_gh_auth
+require_cmd node
 
 ROOT="$(main_repo_root)"
 
-# Resolve the PR number.
+# Resolve the PR number. The numeric argument is ALWAYS a PR number; the issue
+# number (used for worktree cleanup) is a different sequence, so derive it from
+# the PR head branch below.
 if [[ "$TARGET" =~ ^https?:// ]]; then
   pr="${TARGET##*/}"
-  issue_hint="$(basename "$(dirname "$TARGET")" 2>/dev/null || true)"
 elif [[ "$TARGET" =~ ^[0-9]+$ ]]; then
   pr="$TARGET"
 else
   die "unrecognised target: $TARGET"
+fi
+
+# Derive the issue number (issue/<n>-<slug>) so cleanup targets the right tree.
+issue_num="$ISSUE_OVERRIDE"
+head_branch=""
+if [[ -z "$issue_num" ]]; then
+  head_branch="$(gh pr view "$pr" --json headRefName --jq '.headRefName' 2>/dev/null || true)"
+  derived_issue="$(node "$SCRIPT_DIR/lib/branch.mjs" "$head_branch" 2>/dev/null || true)"
+  [[ -n "$derived_issue" ]] && issue_num="$derived_issue"
 fi
 
 log "PR #$pr checks:"
@@ -86,11 +102,17 @@ if [[ "$current" == "$base" ]]; then
   ok "updated local $base"
 fi
 
-# Best-effort worktree cleanup for issue-numbered targets.
-if [[ "$TARGET" =~ ^[0-9]+$ && "$KEEP_WORKTREE" == 0 ]]; then
-  wt="$(issue_worktree_path "$TARGET")"
-  if [[ -d "$wt" ]]; then
-    git -C "$ROOT" worktree remove "$wt" --force >/dev/null 2>&1 && ok "removed worktree $wt" || warn "could not remove worktree $wt"
+# Best-effort worktree cleanup for the issue this PR was opened for.
+if [[ "$KEEP_WORKTREE" == 0 ]]; then
+  if [[ -n "$issue_num" ]]; then
+    wt="$(issue_worktree_path "$issue_num")"
+    if [[ -d "$wt" ]]; then
+      git -C "$ROOT" worktree remove "$wt" --force >/dev/null 2>&1 && ok "removed worktree $wt" || warn "could not remove worktree $wt"
+    else
+      log "no worktree at $wt for issue #$issue_num"
+    fi
+  else
+    warn "could not derive issue number from PR #$pr (head: ${head_branch:-unknown}); pass --issue <n> to clean up its worktree"
   fi
 fi
 
