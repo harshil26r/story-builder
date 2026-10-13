@@ -36,6 +36,8 @@ import type {
   NodeResponse,
   ChoiceResponse,
   ChoiceCreateRequest,
+  ExploreQuery,
+  ExploreResponse,
 } from '../types/api';
 import { AppError } from '../types/domain';
 import type { ID } from '../types/domain';
@@ -268,6 +270,19 @@ export const storiesApi = {
     });
     if (!res.ok) throw await parseError(res);
     return res.blob();
+  },
+};
+
+// Public discovery — GET /api/explore (no auth). Query is URL-encoded; empty
+// values are dropped so the server applies its schema defaults.
+export const exploreApi = {
+  list: (query: ExploreQuery = {}): Promise<ExploreResponse> => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
+    }
+    const qs = params.toString();
+    return http.get<ExploreResponse>(`/explore${qs ? `?${qs}` : ''}`, { noCsrf: true });
   },
 };
 

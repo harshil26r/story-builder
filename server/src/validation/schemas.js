@@ -265,6 +265,17 @@ export const publishSchema = Joi.object({
   isPublic: Joi.boolean().required(),
 });
 
+// ── Explore / discovery (public catalog) ─────────────────────────────────────
+// Public, unauthenticated read of published stories. Query-only schema.
+export const exploreQuerySchema = Joi.object({
+  q: Joi.string().trim().max(120).allow('').default(''),
+  genre: Joi.string().trim().max(80),
+  structureType: Joi.string().valid(...STRUCTURE_TYPES),
+  sort: Joi.string().valid('recent', 'words', 'chapters').default('recent'),
+  page: Joi.number().integer().min(1).max(1000).default(1),
+  limit: Joi.number().integer().min(1).max(48).default(12),
+});
+
 // ── Branching / Node (SPEC 2.6) ──────────────────────────────────────────────
 export const chapterContentUpdateSchema = Joi.object({
   content: Joi.string().trim().max(60000).allow(''),
@@ -350,6 +361,7 @@ export default {
   regenerateChapterSchema,
   continueSchema,
   publishSchema,
+  exploreQuerySchema,
   chapterContentUpdateSchema,
   nodeCreateSchema,
   nodeUpdateSchema,

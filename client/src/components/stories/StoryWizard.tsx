@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { AppError, GenerationMode, ID, Pov, StorySummary } from '../../types/domain';
+import { useLocation, useNavigate } from 'react-router-dom';
+import type {
+  AppError,
+  GenerationMode,
+  ID,
+  Pov,
+  StorySummary,
+  StructureType,
+} from '../../types/domain';
 import type { StoryUpdateRequest } from '../../types/api';
 import { useStoryStore } from '../../store/storyStore';
 import { useUiStore } from '../../store/uiStore';
@@ -38,6 +45,47 @@ interface DraftSnapshot {
   pov: Pov;
   generationMode: GenerationMode;
   characterIds: ID[];
+}
+
+/**
+ * Navigation state the wizard accepts. `/create` (and Explore "Remix") pass a
+ * `preset` so a chosen format pre-fills Settings, and `inspiration` to seed the
+ * premise. All values are sanitized — never trusted as-is.
+ */
+interface WizardNavState {
+  preset?: Partial<SettingsStepValues>;
+  inspiration?: { title: string; premise: string };
+  premise?: string;
+}
+
+const VALID_STRUCTURES: StructureType[] = ['single', 'linear', 'branching'];
+
+function initialSettings(nav: WizardNavState | null): SettingsStepValues {
+  const p = nav?.preset ?? {};
+  return {
+    structureType:
+      p.structureType && VALID_STRUCTURES.includes(p.structureType)
+        ? p.structureType
+        : DEFAULT_SETTINGS.structureType,
+    genre: typeof p.genre === 'string' ? p.genre : DEFAULT_SETTINGS.genre,
+    tone: typeof p.tone === 'string' ? p.tone : DEFAULT_SETTINGS.tone,
+    targetAudience:
+      typeof p.targetAudience === 'string' ? p.targetAudience : DEFAULT_SETTINGS.targetAudience,
+    lengthTarget:
+      typeof p.lengthTarget === 'string' ? p.lengthTarget : DEFAULT_SETTINGS.lengthTarget,
+    pov: p.pov === '1st' || p.pov === '3rd' ? p.pov : DEFAULT_SETTINGS.pov,
+    generationMode:
+      p.generationMode === 'ai-enhanced' || p.generationMode === 'full-ai'
+        ? p.generationMode
+        : DEFAULT_SETTINGS.generationMode,
+  };
+}
+
+function initialPremise(nav: WizardNavState | null): string {
+  if (!nav) return '';
+  const inspired = typeof nav.inspiration?.premise === 'string' ? nav.inspiration.premise : '';
+  const direct = typeof nav.premise === 'string' ? nav.premise : '';
+  return inspired || direct;
 }
 
 function snapshotOf(
@@ -87,13 +135,15 @@ function snapshotsDiffer(a: DraftSnapshot | null, b: DraftSnapshot): boolean {
 
 export function StoryWizard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const navState = (location.state ?? null) as WizardNavState | null;
   const create = useStoryStore((s) => s.create);
   const update = useStoryStore((s) => s.update);
   const readingMode = useUiStore((s) => s.readingMode);
 
   const [step, setStep] = useState(1);
-  const [premise, setPremise] = useState('');
-  const [settings, setSettings] = useState<SettingsStepValues>(DEFAULT_SETTINGS);
+  const [premise, setPremise] = useState(() => initialPremise(navState));
+  const [settings, setSettings] = useState<SettingsStepValues>(() => initialSettings(navState));
   const [characterIds, setCharacterIds] = useState<ID[]>([]);
   const [storyId, setStoryId] = useState<ID | null>(null);
   const [summary, setSummary] = useState<StorySummary | null>(null);
@@ -216,6 +266,16 @@ export function StoryWizard() {
         >
           {createError}
         </div>
+      )}
+
+      {step === 1 && navState?.inspiration?.title && (
+        <p
+          className="rounded-md border border-cyan-200 bg-cyan-50 px-4 py-2 text-xs text-cyan-800"
+          data-testid="inspiration-banner"
+        >
+          Remixing <span className="font-semibold">{navState.inspiration.title}</span> — tweak the
+          idea below however you like.
+        </p>
       )}
 
       {step === 1 && <PremiseStep value={premise} onChange={setPremise} pov={settings.pov} />}

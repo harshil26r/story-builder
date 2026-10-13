@@ -3,9 +3,8 @@ import {
   BookOpen,
   Users,
   BookPlus,
-  GitBranch,
-  BarChart3,
-  Mic,
+  Compass,
+  Search,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -20,6 +19,7 @@ export function SidebarNav() {
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const setSettingsOpen = useUiStore((s) => s.setSettingsOpen);
+  const setSearchOpen = useUiStore((s) => s.setSearchOpen);
   const stories = useStoryStore((s) => s.stories);
 
   const totalWords = stories.reduce((acc, s) => acc + (s.wordCount || 0), 0);
@@ -34,39 +34,27 @@ export function SidebarNav() {
       badge: stories.length > 0 ? String(stories.length) : undefined,
     },
     {
+      label: 'Explore Books',
+      to: '/explore',
+      icon: Compass,
+      active: location.pathname.startsWith('/explore'),
+    },
+    {
       label: 'AI Cast & Characters',
       to: '/characters',
       icon: Users,
       active: location.pathname.startsWith('/characters'),
     },
     {
-      label: 'New Story Wizard',
-      to: '/stories/new',
+      label: 'New Story',
+      to: '/create',
       icon: BookPlus,
-      active: location.pathname === '/stories/new',
+      active: location.pathname === '/create' || location.pathname === '/stories/new',
     },
     {
-      label: 'Branching Plot Trees',
-      to: stories.length > 0 ? `/stories/${stories[0]._id}` : '/stories/new',
-      icon: GitBranch,
-      active: false,
-    },
-    {
-      label: 'Writing Analytics',
-      onClick: () => {
-        const el = document.getElementById('analytics-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      },
-      icon: BarChart3,
-      active: false,
-    },
-    {
-      label: 'Voice Library',
-      onClick: () => {
-        const el = document.getElementById('voice-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      },
-      icon: Mic,
+      label: 'Search Library',
+      onClick: () => setSearchOpen(true),
+      icon: Search,
       active: false,
     },
     {

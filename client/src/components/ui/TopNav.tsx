@@ -26,6 +26,7 @@ export interface TopNavProps {
 
 const DEFAULT_ITEMS: NavItem[] = [
   { label: 'Stories', to: '/' },
+  { label: 'Explore', to: '/explore' },
   { label: 'Characters', to: '/characters' },
 ];
 
