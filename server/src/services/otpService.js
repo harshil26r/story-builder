@@ -54,8 +54,9 @@ async function send(email, purpose, opts = {}) {
     );
   }
 
-  // Generate 6-digit code + store only its sha256 hash.
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  // Generate 6-digit code + store only its sha256 hash. CSPRNG (crypto.randomInt)
+  // — never Math.random(), which is predictable.
+  const code = String(crypto.randomInt(100000, 1000000));
   const otpCodeHash = sha256Hex(code);
   const expiresAt = new Date(now + TTL_MS);
 

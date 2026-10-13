@@ -176,17 +176,20 @@ function buildNodePrompt({ story, summaryBlock, opening }) {
   ].join('\n');
 }
 
-async function generateSummary(text) {
-  const res = await client.messages.create({
-    model,
-    max_tokens: 300,
-    messages: [
-      {
-        role: 'user',
-        content: `Summarize the following chapter in 2–3 sentences for story consistency chaining. Keep names and outcomes exact.\n\n${text}`,
-      },
-    ],
-  });
+async function generateSummary(text, opts = {}) {
+  const res = await client.messages.create(
+    {
+      model,
+      max_tokens: 300,
+      messages: [
+        {
+          role: 'user',
+          content: `Summarize the following chapter in 2–3 sentences for story consistency chaining. Keep names and outcomes exact.\n\n${text}`,
+        },
+      ],
+    },
+    opts,
+  );
   return (res.content || [])
     .map((b) => (b.type === 'text' ? b.text : ''))
     .join('')
@@ -715,91 +718,107 @@ export async function generateNode({ userId, storyId, parentNodeId }, { io, sign
   node.isAIGenerated = true;
   await node.save();
 
-  const opening =
-    !parentNodeId && summaries.length === 0
-      ? 'This is the opening scene of the story.'
-      : 'Continue from the scene established in the STORY SO FAR.';
-  emit(io, 'doc-start', {
-    jobId: job.id,
-    storyId: String(story._id),
-    structureType: 'branching',
-    chapterIndex: job.chapterIndex,
-    title: node.title || story.title || '',
-    nodeId: String(node._id),
-  });
-
-  const system = buildSystemBlocks({ story, characters });
-  const messages = [{ role: 'user', content: buildNodePrompt({ story, summaryBlock, opening }) }];
-  const stream = await openStream(system, messages, job, io);
-  if (!stream) return;
-
-  let scene = '';
-  let tokensUsed = 0;
+  // The node is pre-created so the client gets a stable id at doc-start. Until
+  // the scene is actually committed, any early exit (abort, provider error,
+  // empty text) must clean it up or the story accumulates orphan draft nodes.
+  let committed = false;
   try {
-    ({ text: scene, tokensUsed } = await consumeStream(stream, { job, io }));
-  } catch (err) {
-    if (job.abort.signal.aborted) return;
-    emitError(io, 'AI_UNAVAILABLE', err instanceof Error ? err.message : 'Stream interrupted.');
-    return;
-  }
-  if (job.abort.signal.aborted) return;
-
-  if (!scene.trim()) {
-    emitError(
-      io,
-      'AI_UNAVAILABLE',
-      'The AI provider did not return any text. Please try again shortly.',
-    );
-    return;
-  }
-
-  const content = scene.trim();
-  const summary = await generateSummary(content || '');
-  emit(io, 'snapshot', { jobId: job.id, chapterIndex: job.chapterIndex, fullTextSoFar: content });
-  emit(io, 'summary', { summary });
-
-  const parsed = parseNodeChoices(content || '');
-  const labels = parsed.length >= 2 ? parsed.slice(0, 4) : [];
-
-  node.title = story.title || 'Branch';
-  node.content = content;
-  node.summary = summary;
-  await node.save();
-
-  for (const label of labels) {
-    await nodeService.addChoice(userId, node._id, { label });
-  }
-
-  const savedNode = await BranchNode.findById(node._id);
-
-  story.wordCount = words(content);
-  story.version = (story.version || 1) + 1;
-  await story.save();
-  await recordAiUsage(String(userId), tokensUsed || Math.max(1, words(content)));
-
-  const totalNodes = await BranchNode.countDocuments({ storyId: story._id });
-
-  emit(io, 'done', {
-    jobId: job.id,
-    saved: {
-      _id: String(savedNode._id),
+    const opening =
+      !parentNodeId && summaries.length === 0
+        ? 'This is the opening scene of the story.'
+        : 'Continue from the scene established in the STORY SO FAR.';
+    emit(io, 'doc-start', {
+      jobId: job.id,
       storyId: String(story._id),
-      title: savedNode.title,
-      content: savedNode.content,
-      summary: savedNode.summary,
-      version: savedNode.version,
-      choices: (savedNode.choices || []).map((c) => ({
-        _id: String(c._id),
-        label: c.label,
-        targetNodeId: c.targetNodeId ? String(c.targetNodeId) : null,
-      })),
-      isStart: savedNode.isStart,
-      isEnding: savedNode.isEnding,
-      parentId: savedNode.parentId ? String(savedNode.parentId) : null,
-      totalNodes,
-      wordCount: words(content),
-    },
-  });
+      structureType: 'branching',
+      chapterIndex: job.chapterIndex,
+      title: node.title || story.title || '',
+      nodeId: String(node._id),
+    });
+
+    const system = buildSystemBlocks({ story, characters });
+    const messages = [{ role: 'user', content: buildNodePrompt({ story, summaryBlock, opening }) }];
+    const stream = await openStream(system, messages, job, io);
+    if (!stream) return;
+
+    let scene = '';
+    let tokensUsed = 0;
+    try {
+      ({ text: scene, tokensUsed } = await consumeStream(stream, { job, io }));
+    } catch (err) {
+      if (job.abort.signal.aborted) return;
+      emitError(io, 'AI_UNAVAILABLE', err instanceof Error ? err.message : 'Stream interrupted.');
+      return;
+    }
+    if (job.abort.signal.aborted) return;
+
+    if (!scene.trim()) {
+      emitError(
+        io,
+        'AI_UNAVAILABLE',
+        'The AI provider did not return any text. Please try again shortly.',
+      );
+      return;
+    }
+
+    const content = scene.trim();
+    const summary = await generateSummary(content || '', { signal: job.abort.signal });
+    emit(io, 'snapshot', {
+      jobId: job.id,
+      chapterIndex: job.chapterIndex,
+      fullTextSoFar: content,
+    });
+    emit(io, 'summary', { summary });
+
+    const parsed = parseNodeChoices(content || '');
+    const labels = parsed.length >= 2 ? parsed.slice(0, 4) : [];
+
+    node.title = story.title || 'Branch';
+    node.content = content;
+    node.summary = summary;
+    await node.save();
+
+    for (const label of labels) {
+      await nodeService.addChoice(userId, node._id, { label });
+    }
+
+    const savedNode = await BranchNode.findById(node._id);
+
+    // Branching stories have no chapters — aggregate across every node.
+    story.wordCount = await nodeService.computeNodeWordCount(story._id);
+    story.version = (story.version || 1) + 1;
+    await story.save();
+    await recordAiUsage(String(userId), tokensUsed || Math.max(1, words(content)));
+
+    const totalNodes = await BranchNode.countDocuments({ storyId: story._id });
+
+    emit(io, 'done', {
+      jobId: job.id,
+      saved: {
+        _id: String(savedNode._id),
+        storyId: String(story._id),
+        title: savedNode.title,
+        content: savedNode.content,
+        summary: savedNode.summary,
+        version: savedNode.version,
+        choices: (savedNode.choices || []).map((c) => ({
+          _id: String(c._id),
+          label: c.label,
+          targetNodeId: c.targetNodeId ? String(c.targetNodeId) : null,
+        })),
+        isStart: savedNode.isStart,
+        isEnding: savedNode.isEnding,
+        parentId: savedNode.parentId ? String(savedNode.parentId) : null,
+        totalNodes,
+        wordCount: words(content),
+      },
+    });
+    committed = true;
+  } finally {
+    if (!committed) {
+      await nodeService.remove(userId, node._id, { cascade: true }).catch(() => {});
+    }
+  }
 }
 
 // ── Cover placeholder (TICKET-85) ─────────────────────────────────────────────

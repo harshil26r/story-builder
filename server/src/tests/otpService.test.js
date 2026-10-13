@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import OtpToken from '../models/OtpToken.js';
 import otpService from '../services/otpService.js';
@@ -117,6 +118,20 @@ describe('otpService (TICKET-24)', () => {
     await otpService.send(EMAIL, 'signup-verify', { mailer, now: Date.now() });
     const doc = await OtpToken.findOne({ email: EMAIL });
     expect(doc.otpCodeHash.length).toBe(64);
+    await OtpToken.deleteMany({ email: EMAIL });
+  });
+
+  it('generates the code with the CSPRNG (crypto.randomInt)', async () => {
+    await OtpToken.deleteMany({ email: EMAIL });
+    const mailer = fakeMailer();
+    const randomInt = vi.spyOn(crypto, 'randomInt').mockReturnValue(654321);
+    try {
+      const result = await otpService.send(EMAIL, 'signup-verify', { mailer, now: Date.now() });
+      expect(randomInt).toHaveBeenCalledWith(100000, 1000000);
+      expect(result.code).toBe('654321');
+    } finally {
+      randomInt.mockRestore();
+    }
     await OtpToken.deleteMany({ email: EMAIL });
   });
 });

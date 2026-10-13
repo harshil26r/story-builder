@@ -363,4 +363,57 @@ describe('nodeService (TICKET-71)', () => {
     const linear = await linearStory();
     await expectAppError(nodeService.list(userId, linear._id), 'VALIDATION_ERROR', 400);
   });
+
+  it('computeNodeWordCount sums words across all nodes, ignoring blanks', async () => {
+    const story = await branchingStory('Word Count Tale');
+    const root = await nodeService.create(userId, story._id, {
+      title: 'A',
+      content: 'one two three',
+    });
+    await nodeService.create(userId, story._id, {
+      parentId: root._id,
+      title: 'B',
+      content: 'four five',
+    });
+    // A whitespace-only draft node contributes zero words.
+    await nodeService.create(userId, story._id, {
+      parentId: root._id,
+      title: 'Draft',
+      content: '   ',
+    });
+
+    expect(await nodeService.computeNodeWordCount(story._id)).toBe(5);
+  });
+
+  it('remove cascade clears incoming edges from multiple owners in one pass', async () => {
+    const story = await branchingStory('Multi Owner');
+    const start = await nodeService.create(userId, story._id, { title: 'Start', content: 's' });
+    const other = await nodeService.create(userId, story._id, {
+      parentId: start._id,
+      title: 'Other',
+      content: 'o',
+    });
+    const target = await nodeService.create(userId, story._id, {
+      parentId: start._id,
+      title: 'Hub',
+      content: 'h',
+    });
+    await nodeService.addChoice(userId, start._id, {
+      label: 'In from start',
+      targetNodeId: target._id,
+    });
+    await nodeService.addChoice(userId, other._id, {
+      label: 'In from other',
+      targetNodeId: target._id,
+    });
+
+    const result = await nodeService.remove(userId, target._id, { cascade: true });
+    expect(result.ok).toBe(true);
+    expect(result.orphanedChoices).toBe(2);
+
+    const freshStart = await BranchNode.findById(start._id);
+    const freshOther = await BranchNode.findById(other._id);
+    expect(freshStart.choices.find((c) => c.label === 'In from start').targetNodeId).toBeNull();
+    expect(freshOther.choices.find((c) => c.label === 'In from other').targetNodeId).toBeNull();
+  });
 });

@@ -115,7 +115,11 @@ describe('gemini adapter (Anthropic-shaped seam)', () => {
     expect(fakeModels.generateContent).toHaveBeenCalledWith({
       model: 'gemini-3.6-flash',
       contents: [{ role: 'user', parts: [{ text: 'Summarize.' }] }],
-      config: { maxOutputTokens: 300, systemInstruction: 'Be consistent.' },
+      config: {
+        maxOutputTokens: 300,
+        systemInstruction: 'Be consistent.',
+        abortSignal: expect.anything(),
+      },
     });
     expect(res.content).toEqual([{ type: 'text', text: 'Chapter summary.' }]);
   });
