@@ -93,16 +93,26 @@ VERDICT: PASSED
 or
 VERDICT: CHANGES REQUESTED"
 
-log "running independent review with model: $MODEL"
-tmp="$(mktemp)"
+# Capture the raw JSON event stream so the transcript stays available for
+# debugging, and persist only the reviewer's final report to the artifact.
+raw_stream="$(reviews_dir "$ROOT")/issue-${ISSUE}.md.full.jsonl"
+err_stream="$(reviews_dir "$ROOT")/issue-${ISSUE}.md.full.err"
+log "running independent review with model: $MODEL (raw stream: $raw_stream)"
 set +e
-opencode run --agent issue-reviewer --dir "$DIR" --model "$MODEL" "$prompt" 2>&1 | tee "$tmp"
-status=${PIPESTATUS[0]}
+opencode run --agent issue-reviewer --dir "$DIR" --model "$MODEL" --format json "$prompt" \
+  >"$raw_stream" 2>"$err_stream"
+status=$?
 set -e
-mv "$tmp" "$artifact"
 
 if [[ "$status" -ne 0 ]]; then
+  warn "reviewer stderr: $err_stream"
   die "reviewer invocation failed (exit $status)"
+fi
+
+node "$SCRIPT_DIR/lib/review-report.mjs" <"$raw_stream" >"$artifact"
+if [[ ! -s "$artifact" ]]; then
+  warn "could not extract a report from $raw_stream — falling back to raw stream"
+  cp "$raw_stream" "$artifact"
 fi
 
 state_set "$ROOT" "$ISSUE" review "$artifact"

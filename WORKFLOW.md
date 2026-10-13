@@ -98,8 +98,10 @@ All local workflow state lives under `.workflow/` (git-ignored):
 ```
 .workflow/
   issues/<n>/{title,branch,worktree,status,review,pr}
-  reviews/issue-<n>.md     # independent review report (also embedded in the PR)
-  pr/issue-<n>.md          # generated PR description
+  reviews/issue-<n>.md            # clean review report (embedded in the PR)
+  reviews/issue-<n>.md.full.jsonl # raw reviewer event stream (debug only)
+  reviews/issue-<n>.md.full.err   # reviewer stderr
+  pr/issue-<n>.md                 # generated PR description
 ```
 
 Worktrees live **beside** the repo at

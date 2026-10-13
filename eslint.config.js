@@ -18,6 +18,18 @@ export default [
     files: ['client/**/*.{ts,tsx}'],
   })),
   {
+    files: ['scripts/**/*.{js,mjs}'],
+    languageOptions: {
+      ecmaVersion: 2024,
+      sourceType: 'module',
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+      },
+    },
+  },
+  {
     files: ['server/**/*.{js,mjs}'],
     languageOptions: {
       ecmaVersion: 2024,
