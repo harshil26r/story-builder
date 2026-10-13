@@ -82,6 +82,10 @@ export default async function createApp(mongoUri, options = {}) {
   // Public share read — no auth/CSRF (SPEC §3.2 Share).
   app.use('/s', storyRoutes.shareRouter);
 
+  // Public discovery — no auth/CSRF: browse/search published stories.
+  const exploreRoutes = await import('./routes/explore.routes.js');
+  app.use('/api/explore', exploreRoutes.default);
+
   // Branching nodes (SPEC §3.2 Branching) — serves /api/stories/:id/nodes and
   // /api/nodes/... from one router; mounted before story's export routes so the
   // `nodes` path segment never collides.

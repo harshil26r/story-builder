@@ -1,8 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, BookOpen, Users, PlusCircle, Sparkles, X, ArrowRight } from 'lucide-react';
+import {
+  Search,
+  BookOpen,
+  Users,
+  PlusCircle,
+  Sparkles,
+  X,
+  ArrowRight,
+  Compass,
+} from 'lucide-react';
 import { useStoryStore } from '../../store/storyStore';
 import { useCharacterStore } from '../../store/characterStore';
+import { exploreApi } from '../../services/api';
+import { useDebouncedCallback } from '../../hooks/useDebouncedCallback';
+import type { ExploreStory } from '../../types/api';
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -14,6 +26,32 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
   const stories = useStoryStore((s) => s.stories);
   const characters = useCharacterStore((s) => s.characters);
+  const [community, setCommunity] = useState<ExploreStory[]>([]);
+  const [communityStatus, setCommunityStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
+    'idle',
+  );
+
+  // Server-backed search across published books (Explore catalog), debounced so
+  // typing doesn't hammer the API. Results augment the local story/character hits.
+  const runExploreSearch = useDebouncedCallback((value: string) => {
+    const term = value.trim();
+    if (term.length < 2) {
+      setCommunity([]);
+      setCommunityStatus('idle');
+      return;
+    }
+    setCommunityStatus('loading');
+    exploreApi
+      .list({ q: term, limit: 5 })
+      .then((res) => {
+        setCommunity(res.stories);
+        setCommunityStatus('success');
+      })
+      .catch(() => {
+        setCommunity([]);
+        setCommunityStatus('error');
+      });
+  }, 300);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -28,6 +66,13 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) {
+      setCommunity([]);
+      setCommunityStatus('idle');
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -62,7 +107,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             autoFocus
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              runExploreSearch(e.target.value);
+            }}
             placeholder="Search stories, characters, chapters, quick commands..."
             className="ml-3 flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
           />
@@ -105,6 +153,16 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             <div className="flex items-center gap-2.5">
               <Users className="h-4 w-4 text-emerald-400" />
               <span>Create New Character</span>
+            </div>
+            <ArrowRight className="h-3.5 w-3.5 text-slate-500" />
+          </button>
+          <button
+            onClick={() => handleSelect('/explore')}
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-300 hover:bg-indigo-600/15 hover:text-indigo-300"
+          >
+            <div className="flex items-center gap-2.5">
+              <Compass className="h-4 w-4 text-cyan-400" />
+              <span>Explore Published Books</span>
             </div>
             <ArrowRight className="h-3.5 w-3.5 text-slate-500" />
           </button>
@@ -159,11 +217,55 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             </div>
           )}
 
-          {query && filteredStories.length === 0 && filteredCharacters.length === 0 && (
-            <div className="py-8 text-center text-sm text-slate-500">
-              No results found for &ldquo;{query}&rdquo;
+          {/* Community books (server-backed Explore search) */}
+          {query.trim().length >= 2 && (
+            <div className="mt-3">
+              <div className="mb-1 px-3 py-1 text-[0.625rem] font-semibold uppercase tracking-wider text-slate-500">
+                Community Books
+              </div>
+              {communityStatus === 'loading' && community.length === 0 && (
+                <div className="px-3 py-2 text-sm text-slate-500">Searching published books…</div>
+              )}
+              {communityStatus === 'error' && (
+                <div className="px-3 py-2 text-sm text-slate-500">
+                  Couldn&rsquo;t reach Explore. Try again.
+                </div>
+              )}
+              {community.map((story) => (
+                <button
+                  key={story._id}
+                  onClick={() =>
+                    handleSelect(story.shareToken ? `/s/${story.shareToken}` : '/explore')
+                  }
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-300 hover:bg-slate-800/70 hover:text-slate-100"
+                >
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <Compass className="h-4 w-4 shrink-0 text-cyan-400" />
+                    <span className="truncate font-medium text-slate-200">{story.title}</span>
+                    <span className="shrink-0 text-xs text-slate-500">&middot; {story.genre}</span>
+                  </div>
+                  <span className="shrink-0 text-xs text-cyan-400">Read &rarr;</span>
+                </button>
+              ))}
+              <button
+                onClick={() => handleSelect(`/explore?q=${encodeURIComponent(query.trim())}`)}
+                className="mt-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-indigo-300 hover:bg-indigo-600/15"
+              >
+                <span>Search all published books for &ldquo;{query.trim()}&rdquo;</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
+
+          {query &&
+            filteredStories.length === 0 &&
+            filteredCharacters.length === 0 &&
+            community.length === 0 &&
+            communityStatus !== 'loading' && (
+              <div className="py-8 text-center text-sm text-slate-500">
+                No results found for &ldquo;{query}&rdquo;
+              </div>
+            )}
         </div>
 
         {/* Footer shortcuts */}

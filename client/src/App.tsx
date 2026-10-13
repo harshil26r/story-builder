@@ -10,7 +10,9 @@ import { OtpVerification } from './components/auth/OtpVerification';
 import { CharactersDashboard } from './components/characters/CharactersDashboard';
 import { CharacterEditor } from './components/characters/CharacterEditor';
 import { StoriesDashboard } from './components/stories/StoriesDashboard';
+import { CreateStoryPage } from './components/stories/CreateStoryPage';
 import { StoryWizard } from './components/stories/StoryWizard';
+import { ExplorePage } from './components/explore/ExplorePage';
 import { BookReader } from './components/book/BookReader';
 import { StoryEditor } from './components/stories/StoryEditor';
 import { PublicReader } from './components/book/PublicReader';
@@ -196,6 +198,22 @@ export default function App() {
           }
         />
         <Route path="/website" element={<WebsitePage />} />
+        <Route
+          path="/explore"
+          element={
+            <AuthGate>
+              <ExplorePage />
+            </AuthGate>
+          }
+        />
+        <Route
+          path="/create"
+          element={
+            <AuthGate>
+              <CreateStoryPage />
+            </AuthGate>
+          }
+        />
         <Route
           path="/characters"
           element={

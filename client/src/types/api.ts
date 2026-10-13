@@ -139,6 +139,45 @@ export type RegenerateChapterRequest = {
 export type ContinueRequest = ({ chaptersCount?: number } & { baseVersion?: number }) | undefined;
 export type PublishResponse = { isPublic: boolean; shareToken: string };
 
+// ── Explore / discovery (public catalog) ─────────────────────────────────────
+export type ExploreSort = 'recent' | 'words' | 'chapters';
+
+export interface ExploreQuery {
+  q?: string;
+  genre?: string;
+  structureType?: StructureType;
+  sort?: ExploreSort;
+  page?: number;
+  limit?: number;
+}
+
+/** Public projection returned by GET /api/explore — no userId/PII. */
+export interface ExploreStory {
+  _id: ID;
+  title: string;
+  premise: string;
+  genre: string;
+  tone: string;
+  targetAudience: string;
+  structureType: StructureType;
+  generationMode: GenerationMode;
+  status: StoryStatus;
+  isPublic: boolean;
+  shareToken: string | null;
+  totalChapters: number;
+  wordCount: number;
+  coverImageUrl: string | null;
+  updatedAt: string;
+}
+
+export interface ExploreResponse {
+  stories: ExploreStory[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
 // ── Upload / Export / Branching ──────────────────────────────────────────────
 export type UploadResponse = { url: string };
 

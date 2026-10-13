@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BookOpen,
   BookPlus,
@@ -6,13 +6,11 @@ import {
   GitBranch,
   Layers,
   Share2,
-  Calendar,
   Clock,
   CheckCircle2,
-  PlayCircle,
   Users,
-  Mic,
-  CreditCard,
+  Compass,
+  Search,
   Settings,
   ArrowUpRight,
   TrendingUp,
@@ -41,6 +39,12 @@ const SEAM: Record<string, string> = {
   branching: 'bg-sky-400/70',
 };
 
+function greetingForHour(hour: number): string {
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export function StoriesDashboard() {
   const user = useAuthStore((s) => s.user);
   const stories = useStoryStore((s) => s.stories);
@@ -48,16 +52,28 @@ export function StoriesDashboard() {
   const error = useStoryStore((s) => s.error);
   const fetch = useStoryStore((s) => s.fetchList);
   const setSettingsOpen = useUiStore((s) => s.setSettingsOpen);
+  const setSearchOpen = useUiStore((s) => s.setSearchOpen);
   const [shareTarget, setShareTarget] = useState<StorySummary | null>(null);
-  const [trendView, setTrendView] = useState<'daily' | 'weekly'>('daily');
 
   useEffect(() => {
     void fetch();
   }, [fetch]);
 
-  const totalWords = stories.reduce((sum, s) => sum + (s.wordCount || 0), 0);
-  const displayWords = totalWords > 0 ? totalWords : 12480;
-  const minutesUsed = Math.max(24, Math.round(displayWords / 350));
+  const metrics = useMemo(() => {
+    const totalWords = stories.reduce((sum, s) => sum + (s.wordCount || 0), 0);
+    const totalChapters = stories.reduce((sum, s) => sum + (s.totalChapters || 0), 0);
+    const published = stories.filter((s) => s.isPublic).length;
+    const complete = stories.filter((s) => s.status === 'complete').length;
+    const drafts = stories.length - complete;
+    const completionPct = stories.length ? Math.round((complete / stories.length) * 100) : 0;
+    const chart = [...stories]
+      .sort((a, b) => (b.wordCount || 0) - (a.wordCount || 0))
+      .slice(0, 7);
+    return { totalWords, totalChapters, published, complete, drafts, completionPct, chart };
+  }, [stories]);
+
+  const greeting = useMemo(() => greetingForHour(new Date().getHours()), []);
+  const maxChartWords = Math.max(1, ...metrics.chart.map((s) => s.wordCount || 0));
 
   const skeleton = (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -94,24 +110,62 @@ export function StoriesDashboard() {
     </div>
   );
 
+  const quickLinks = [
+    {
+      label: 'New Story',
+      hint: 'Premise to book',
+      to: '/create',
+      icon: BookPlus,
+      tone: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+      hover: 'group-hover:text-indigo-600',
+    },
+    {
+      label: 'Explore Books',
+      hint: 'Read & get inspired',
+      to: '/explore',
+      icon: Compass,
+      tone: 'bg-cyan-50 text-cyan-600 border-cyan-100',
+      hover: 'group-hover:text-cyan-600',
+    },
+    {
+      label: 'Characters',
+      hint: 'Cast & personas',
+      to: '/characters',
+      icon: Users,
+      tone: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+      hover: 'group-hover:text-emerald-600',
+    },
+    {
+      label: 'Search',
+      hint: 'Find anything (⌘K)',
+      onClick: () => setSearchOpen(true),
+      icon: Search,
+      tone: 'bg-amber-50 text-amber-600 border-amber-100',
+      hover: 'group-hover:text-amber-600',
+    },
+  ];
+
   return (
     <div className="space-y-8 pb-12">
-      {/* ── Greeting Header (Voni AI Match) ── */}
+      {/* ── Greeting Header ── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Good morning <span className="text-indigo-600">{user?.name || 'Author'}</span>
+            {greeting} <span className="text-indigo-600">{user?.name || 'Author'}</span>
           </h1>
           <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-            Here&apos;s how your story manuscripts are performing today.
+            {stories.length > 0
+              ? `You have ${stories.length} ${stories.length === 1 ? 'manuscript' : 'manuscripts'} · ${formatWords(metrics.totalWords)} written.`
+              : 'Your story studio is ready. Start writing whenever you like.'}
           </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 shadow-xs sm:flex">
-            <Calendar className="h-3.5 w-3.5 text-slate-500" />
-            <span>09/09/2026 &ndash; 09/10/2026</span>
-          </div>
-          <Link to="/stories/new">
+          <Link to="/explore">
+            <Button size="sm" variant="outline" data-testid="explore-btn">
+              <Compass className="h-4 w-4" aria-hidden="true" /> Explore
+            </Button>
+          </Link>
+          <Link to="/create">
             <Button size="sm" data-testid="new-story-btn">
               <BookPlus className="h-4 w-4" aria-hidden="true" /> + New Story
             </Button>
@@ -119,9 +173,8 @@ export function StoriesDashboard() {
         </div>
       </div>
 
-      {/* ── 4 Top Metrics Cards (Voni AI Match) ── */}
+      {/* ── Real Metrics ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Metric 1: Total Words */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-500">
             <span className="font-mono text-[0.6875rem] font-semibold uppercase tracking-wider text-slate-500">
@@ -133,20 +186,18 @@ export function StoriesDashboard() {
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">
-              {formatWords(displayWords)}
-            </span>
-            <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[0.625rem] font-semibold text-emerald-700 border border-emerald-200">
-              +100%
+              {formatWords(metrics.totalWords)}
             </span>
           </div>
-          <p className="mt-1 text-[0.6875rem] text-slate-500">vs 0 last week</p>
+          <p className="mt-1 text-[0.6875rem] text-slate-500">
+            Across {stories.length} {stories.length === 1 ? 'manuscript' : 'manuscripts'}
+          </p>
         </div>
 
-        {/* Metric 2: Minutes Used */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-500">
             <span className="font-mono text-[0.6875rem] font-semibold uppercase tracking-wider text-slate-500">
-              MINUTES USED
+              CHAPTERS WRITTEN
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600">
               <Clock className="h-4 w-4" />
@@ -154,57 +205,56 @@ export function StoriesDashboard() {
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">
-              {minutesUsed}
-            </span>
-            <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[0.625rem] font-semibold text-emerald-700 border border-emerald-200">
-              +100%
+              {metrics.totalChapters}
             </span>
           </div>
-          <p className="mt-1 text-[0.6875rem] text-slate-500">vs 0 last week</p>
+          <p className="mt-1 text-[0.6875rem] text-slate-500">Generated and saved</p>
         </div>
 
-        {/* Metric 3: Narrative Coherence / Containment */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-500">
             <span className="font-mono text-[0.6875rem] font-semibold uppercase tracking-wider text-slate-500">
-              CONTAINMENT RATE
+              COMPLETION RATE
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600">
               <CheckCircle2 className="h-4 w-4" />
             </span>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">100%</span>
-            <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[0.625rem] font-semibold text-emerald-700 border border-emerald-200">
-              +100%
+            <span className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">
+              {metrics.completionPct}%
+            </span>
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[0.625rem] font-semibold text-slate-600 border border-slate-200">
+              {metrics.complete}/{stories.length} done
             </span>
           </div>
-          <p className="mt-1 text-[0.6875rem] text-slate-500">vs 0% last week</p>
+          <p className="mt-1 text-[0.6875rem] text-slate-500">
+            {metrics.drafts} {metrics.drafts === 1 ? 'draft' : 'drafts'} in progress
+          </p>
         </div>
 
-        {/* Metric 4: Active Campaigns / Manuscripts */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <div className="flex items-center justify-between text-slate-500">
             <span className="font-mono text-[0.6875rem] font-semibold uppercase tracking-wider text-slate-500">
-              ACTIVE CAMPAIGNS
+              PUBLISHED
             </span>
             <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600">
-              <PlayCircle className="h-4 w-4" />
+              <Share2 className="h-4 w-4" />
             </span>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">
-              {stories.length}
+              {metrics.published}
             </span>
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[0.625rem] font-semibold text-slate-600 border border-slate-200">
-              steady
+            <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[0.625rem] font-semibold text-emerald-700 border border-emerald-200">
+              Public
             </span>
           </div>
-          <p className="mt-1 text-[0.6875rem] text-slate-500">No drafts pending</p>
+          <p className="mt-1 text-[0.6875rem] text-slate-500">Readable via share link & Explore</p>
         </div>
       </div>
 
-      {/* ── Quick Access Grid (8 cards matching Voni AI Quick Access) ── */}
+      {/* ── Quick Access ── */}
       <div>
         <div className="mb-3 flex items-center gap-2">
           <span className="font-mono text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -212,201 +262,86 @@ export function StoriesDashboard() {
           </span>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-4">
-          <Link
-            to="/characters"
-            className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
-                <Users className="h-4 w-4" />
+          {quickLinks.map((item) => {
+            const Icon = item.icon;
+            const inner = (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg border ${item.tone}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-900">{item.label}</p>
+                    <p className="text-[0.6875rem] text-slate-500">{item.hint}</p>
+                  </div>
+                </div>
+                <ArrowUpRight
+                  className={`h-3.5 w-3.5 text-slate-400 transition-colors ${item.hover}`}
+                />
               </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">AI Characters</p>
-                <p className="text-[0.6875rem] text-slate-500">Voice & Personas</p>
-              </div>
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-indigo-600" />
-          </Link>
-
-          <Link
-            to="/stories/new"
-            className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 border border-rose-100">
-                <FileText className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">Plot Outlines</p>
-                <p className="text-[0.6875rem] text-slate-500">Premise & Arcs</p>
-              </div>
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-rose-600" />
-          </Link>
-
-          <Link
-            to="/stories/new"
-            className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-50 text-cyan-600 border border-cyan-100">
-                <GitBranch className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">Plot Trees</p>
-                <p className="text-[0.6875rem] text-slate-500">Create & Run</p>
-              </div>
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-cyan-600" />
-          </Link>
-
-          <Link
-            to="/"
-            className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
-                <Layers className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">Manuscripts</p>
-                <p className="text-[0.6875rem] text-slate-500">Volumes & audio</p>
-              </div>
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-emerald-600" />
-          </Link>
-
-          <a
-            href="#analytics-section"
-            className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-100">
-                <TrendingUp className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">Analytics</p>
-                <p className="text-[0.6875rem] text-slate-500">Performance</p>
-              </div>
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-amber-600" />
-          </a>
-
-          <a
-            href="#voice-section"
-            className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-violet-600 border border-violet-100">
-                <Mic className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">Voice Library</p>
-                <p className="text-[0.6875rem] text-slate-500">Browse voices</p>
-              </div>
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-violet-600" />
-          </a>
-
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5 text-left shadow-xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600 border border-sky-100">
-                <CreditCard className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">Billing</p>
-                <p className="text-[0.6875rem] text-slate-500">Plan & usage</p>
-              </div>
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-sky-600" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5 text-left shadow-xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-50"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
-                <Settings className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-900">Settings</p>
-                <p className="text-[0.6875rem] text-slate-500">Workspace config</p>
-              </div>
-            </div>
-            <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-slate-600" />
-          </button>
+            );
+            const cls =
+              'group flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white p-3.5 text-left shadow-xs transition-all duration-200 hover:border-slate-300 hover:bg-slate-50';
+            return item.to ? (
+              <Link key={item.label} to={item.to} className={cls}>
+                {inner}
+              </Link>
+            ) : (
+              <button key={item.label} type="button" onClick={item.onClick} className={cls}>
+                {inner}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* ── Visual Analytics Section (Volume Trend & Outcomes Gauge) ── */}
+      {/* ── Writing Activity (real) ── */}
       <div id="analytics-section" className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Left 2 Cols: Writing Volume Trend */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-indigo-600" />
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700">
-                CALL & WRITING VOLUME TREND
-              </h2>
-            </div>
-            <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-[0.6875rem]">
-              <button
-                type="button"
-                onClick={() => setTrendView('daily')}
-                className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
-                  trendView === 'daily' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'
-                }`}
-              >
-                Daily
-              </button>
-              <button
-                type="button"
-                onClick={() => setTrendView('weekly')}
-                className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
-                  trendView === 'weekly' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'
-                }`}
-              >
-                Weekly
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-indigo-600" />
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700">
+              WORDS BY MANUSCRIPT
+            </h2>
           </div>
 
-          {/* Bar Chart Visualization */}
-          <div className="mt-8 flex h-48 items-end justify-between gap-3 border-b border-slate-200 pb-2 px-2">
-            {[
-              { day: 'Sat', val: 78 },
-              { day: 'Sun', val: 0 },
-              { day: 'Mon', val: 42 },
-              { day: 'Tue', val: 0 },
-              { day: 'Wed', val: 0 },
-              { day: 'Thu', val: 0 },
-              { day: 'Fri', val: 0 },
-            ].map((item, idx) => (
-              <div key={idx} className="flex flex-1 flex-col items-center gap-2">
+          {stories.length === 0 ? (
+            <div className="mt-8 flex h-48 items-center justify-center text-sm text-slate-500">
+              No manuscripts yet — your words will chart here.
+            </div>
+          ) : (
+            <div className="mt-8 flex h-48 items-end justify-between gap-3 border-b border-slate-200 px-2 pb-2">
+              {metrics.chart.map((story) => (
                 <div
-                  className="w-full max-w-[48px] rounded-t-lg bg-gradient-to-t from-indigo-200 via-indigo-500 to-indigo-600 transition-all duration-500 hover:brightness-110"
-                  style={{ height: `${Math.max(4, (item.val / 100) * 160)}px` }}
-                />
-                <span className="text-[0.6875rem] text-slate-500">{item.day}</span>
-              </div>
-            ))}
-          </div>
+                  key={story._id}
+                  className="flex flex-1 flex-col items-center gap-2"
+                  aria-label={`${story.title}: ${formatWords(story.wordCount || 0)}`}
+                  title={story.title}
+                >
+                  <span className="font-mono text-[0.625rem] text-slate-500">
+                    {formatWords(story.wordCount || 0).replace(' words', '').replace(' word', '')}
+                  </span>
+                  <div
+                    className="w-full max-w-[48px] rounded-t-lg bg-gradient-to-t from-indigo-200 via-indigo-500 to-indigo-600 transition-all duration-500 hover:brightness-110"
+                    style={{
+                      height: `${Math.max(4, ((story.wordCount || 0) / maxChartWords) * 150)}px`,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
           <p className="mt-2 text-right text-[0.625rem] text-slate-500">
-            Real-time story generation volume (tokens &amp; chapters)
+            Total words per manuscript, updated live
           </p>
         </div>
 
-        {/* Right 1 Col: Story Outcomes & Containment Gauge */}
         <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700">
-              CALL &amp; STORY OUTCOMES
+              MANUSCRIPT STATUS
             </h2>
             <div className="relative mx-auto my-6 flex h-36 w-36 items-center justify-center">
               <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
@@ -425,13 +360,15 @@ export function StoriesDashboard() {
                   className="stroke-indigo-600"
                   strokeWidth="10"
                   strokeDasharray="251.2"
-                  strokeDashoffset="0"
+                  strokeDashoffset={251.2 - (metrics.completionPct / 100) * 251.2}
                   strokeLinecap="round"
                   fill="transparent"
                 />
               </svg>
               <div className="absolute text-center">
-                <span className="font-display text-2xl font-bold text-slate-900">84</span>
+                <span className="font-display text-2xl font-bold text-slate-900">
+                  {stories.length}
+                </span>
                 <p className="text-[0.625rem] uppercase tracking-wider text-slate-500">TOTAL</p>
               </div>
             </div>
@@ -441,30 +378,30 @@ export function StoriesDashboard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-slate-700">
                 <span className="h-2 w-2 rounded-full bg-indigo-600" />
-                <span>Successful &amp; Completed</span>
+                <span>Completed</span>
               </div>
-              <span className="font-semibold text-slate-900">100%</span>
+              <span className="font-semibold text-slate-900">{metrics.complete}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-slate-500">
                 <span className="h-2 w-2 rounded-full bg-cyan-500" />
-                <span>In Progress</span>
+                <span>Drafts in progress</span>
               </div>
-              <span className="font-semibold text-slate-600">0%</span>
+              <span className="font-semibold text-slate-600">{metrics.drafts}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-slate-500">
-                <span className="h-2 w-2 rounded-full bg-rose-500" />
-                <span>Failed / Dropped</span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span>Published</span>
               </div>
-              <span className="font-semibold text-slate-600">0%</span>
+              <span className="font-semibold text-slate-600">{metrics.published}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Story Manuscripts Shelf (Preserving all tests & IDs) ── */}
-      <div className="space-y-4 pt-4">
+      {/* ── Story Manuscripts Shelf ── */}
+      <div id="manuscripts" className="space-y-4 pt-4">
         <div className="flex items-end justify-between">
           <div>
             <p className="eyebrow">
@@ -474,6 +411,13 @@ export function StoriesDashboard() {
               Your story manuscripts
             </h2>
           </div>
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="hidden items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:flex"
+          >
+            <Settings className="h-3.5 w-3.5" /> Studio settings
+          </button>
         </div>
 
         <AsyncState
@@ -519,7 +463,7 @@ export function StoriesDashboard() {
                   </div>
                   <p className="mt-2 font-mono text-[0.6875rem] uppercase tracking-wider text-slate-500">
                     {story.totalChapters} {story.totalChapters === 1 ? 'chapter' : 'chapters'}{' '}
-                    &middot; {formatWords(story.wordCount)} words
+                    &middot; {formatWords(story.wordCount)}
                   </p>
                   <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-200 pt-3">
                     <span className="inline-flex items-center gap-1.5 font-mono text-[0.6875rem] uppercase tracking-wider text-slate-400">
