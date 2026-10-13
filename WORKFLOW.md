@@ -55,7 +55,7 @@ Then run exactly the same flow for every issue:
 | 3 | Test          | `scripts/workflow.sh test --dir <worktree>`                    | `npm test`, `npm run typecheck`, `npm run lint` (add `--full` for build). |
 | 4 | Review        | `scripts/workflow.sh review <n> --dir <worktree>`              | `issue-reviewer` agent (**different model**: Gemini 3.8) reviews read-only; writes `.workflow/reviews/issue-<n>.md`. Exit 2 ⇒ `CHANGES REQUESTED`. |
 | 5 | PR            | `scripts/workflow.sh pr <n> --dir <worktree> --commit feat`    | Pushes the branch and opens a PR whose body links the issue, lists changes, and embeds the review. |
-| 6 | Merge         | `scripts/workflow.sh merge <n> --yes`                          | Human-run. Merges into `main`, fast-forwards local main, removes the worktree. |
+| 6 | Merge         | `scripts/workflow.sh merge <pr-number> --yes`                  | Human-run. `<n>` is the **PR** number; the issue is derived from the PR head branch (`issue/<n>-…`). Merges into `main`, fast-forwards local main, removes that issue's worktree (override with `--issue <n>`). |
 
 ### One command to drive a single issue
 
