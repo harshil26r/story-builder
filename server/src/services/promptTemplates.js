@@ -4,8 +4,26 @@
 
 const MAX_SUMMARIES = 5;
 
+// eslint-disable-next-line no-control-regex -- strip C0/C1 control chars (keep \n and \t)
+const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g;
+
+const INJECTION_PATTERNS = [
+  /\b(?:ignore|disregard|forget)\s+(?:(?:all|any|the)\s+)?(?:previous|prior|above|earlier|preceding)\s+(?:instructions?|prompts?|messages?|rules?|directions?)\b/gi,
+  /\byou\s+are\s+(?:now|no\s+longer)\b/gi,
+  /\bsystem\s+(?:prompts?|instructions?)\b/gi,
+  /\[\[\s*choice\s*:/gi,
+];
+
+export function sanitizeUserText(value, maxLength = 4000) {
+  const text = value === undefined || value === null ? '' : String(value);
+  const limit = Number.isFinite(maxLength) && maxLength >= 0 ? maxLength : 4000;
+  let cleaned = text.replace(CONTROL_CHARS, '');
+  for (const pattern of INJECTION_PATTERNS) cleaned = cleaned.replace(pattern, '[filtered]');
+  return cleaned.slice(0, limit);
+}
+
 function valueOrNA(v) {
-  return v === undefined || v === null || v === '' ? 'N/A' : String(v);
+  return v === undefined || v === null || v === '' ? 'N/A' : sanitizeUserText(v);
 }
 
 function bullets(label, items, cap = Infinity) {
@@ -13,14 +31,14 @@ function bullets(label, items, cap = Infinity) {
   if (list.length === 0) return `${label}: N/A`;
   return list
     .slice(0, cap)
-    .map((item) => `${label}: - ${String(item)}`)
+    .map((item) => `${label}: - ${sanitizeUserText(item)}`)
     .join('\n');
 }
 
 function catchphraseLine(phrases) {
   const list = Array.isArray(phrases) ? phrases.filter(Boolean) : [];
   if (list.length === 0) return 'CATCHPHRASES: N/A';
-  return `CATCHPHRASES: ${list.map((p) => `- "${String(p)}"`).join(' ')}`;
+  return `CATCHPHRASES: ${list.map((p) => `- "${sanitizeUserText(p)}"`).join(' ')}`;
 }
 
 function secretLine(secretTrait, revealChapter) {
@@ -39,7 +57,7 @@ function relationshipLines(relationships, nameMap) {
       r.characterId !== undefined && r.characterId !== null ? String(r.characterId) : null;
     const target = (key && nameMap.get(key)) || r.characterName || r.name || key || 'unknown';
     const type = r.relationType || 'N/A';
-    return `RELATIONSHIPS: - ${target} (${type})`;
+    return `RELATIONSHIPS: - ${sanitizeUserText(target)} (${sanitizeUserText(type)})`;
   });
 }
 
@@ -65,8 +83,8 @@ export function buildCharacterSheet(characters = []) {
 
   const lines = ['== CHARACTER SHEET =='];
   for (const c of characters) {
-    const name = c.name || 'Unnamed';
-    const role = c.role || 'neutral';
+    const name = sanitizeUserText(c.name || 'Unnamed');
+    const role = sanitizeUserText(c.role || 'neutral');
     lines.push(`--- ${name} [ROLE: ${role}] ---`);
     lines.push(`AGE: ${valueOrNA(c.age)}     GENDER: ${valueOrNA(c.gender)}`);
     lines.push(`APPEARANCE: ${valueOrNA(c.appearance)}`);
@@ -98,10 +116,10 @@ export function buildSystemPrompt({
     'You are the ghostwriter for an original novel. Write publish-quality prose.',
     '',
     '== WORLD & STYLE ==',
-    `Genre: ${genre || 'general'}`,
-    `Tone: ${tone || 'neutral'}`,
-    `Target audience: ${audience || 'general'}`,
-    `Point of view: ${pov || '3rd'} — maintain strictly. In 1st/2nd person, stay inside the narrating character's knowledge; in 3rd, a consistent limited or omniscient lens.`,
+    `Genre: ${sanitizeUserText(genre || 'general')}`,
+    `Tone: ${sanitizeUserText(tone || 'neutral')}`,
+    `Target audience: ${sanitizeUserText(audience || 'general')}`,
+    `Point of view: ${sanitizeUserText(pov || '3rd')} — maintain strictly. In 1st/2nd person, stay inside the narrating character's knowledge; in 3rd, a consistent limited or omniscient lens.`,
     '',
     '== PROSE RULES ==',
     "- Show, don't tell. Concrete sensory detail over abstractions.",
@@ -128,13 +146,13 @@ export function buildSummaryBlock({ summaries = [], lastLine = '' } = {}) {
   if (recent.length === 0) {
     lines.push('(No prior events — this is the opening of the story.)');
   } else {
-    for (const s of recent) lines.push(`[Ch. ${s.order}] ${s.summary}`);
+    for (const s of recent) lines.push(`[Ch. ${s.order}] ${sanitizeUserText(s.summary)}`);
   }
   lines.push('== CURRENT EVENT ==');
   const flat = String(lastLine || '')
     .replace(/\s+/g, ' ')
     .trim();
-  lines.push(`Previous chapter ended: "${flat.slice(-120)}"`);
+  lines.push(`Previous chapter ended: "${sanitizeUserText(flat.slice(-120))}"`);
   return lines.join('\n');
 }
 
@@ -153,10 +171,11 @@ export function buildChapterPrompt({
   total = 1,
   chapterGoal = '',
 } = {}) {
-  const chapterTitle = story.title || `Chapter ${chapterIndex}`;
-  const requiredBeats =
+  const chapterTitle = sanitizeUserText(story.title || `Chapter ${chapterIndex}`);
+  const requiredBeats = sanitizeUserText(
     story.requiredBeats ||
-    "Advance the premise using the characters' established traits and the events above.";
+      "Advance the premise using the characters' established traits and the events above.",
+  );
   const cliffhangerRule =
     Number(total) > 0 && Number(chapterIndex) >= Number(total)
       ? 'Resolve the story.'
@@ -168,7 +187,7 @@ export function buildChapterPrompt({
     '',
     '== THIS CHAPTER ==',
     `Title: ${chapterTitle}`,
-    `Core beat: ${chapterGoal}`,
+    `Core beat: ${sanitizeUserText(chapterGoal)}`,
     `Required elements this chapter: ${requiredBeats}`,
     cliffhangerRule,
     `Word budget: ~${estimateWords(story.lengthTarget, total)}`,
@@ -184,10 +203,10 @@ export function buildPolishPrompt({ draft = '', story = {} } = {}) {
     "Polish the author's draft below while preserving their plot, scene order, voice intent, and structure. Do NOT add or remove scenes or characters. Improve rhythm, dialogue, sensory detail, grammar, and continuity. Output clean prose only (no markdown).",
     '',
     '== POLISH TARGET ==',
-    `Tone: ${story.tone || 'neutral'}    Genre: ${story.genre || 'general'}`,
+    `Tone: ${sanitizeUserText(story.tone || 'neutral')}    Genre: ${sanitizeUserText(story.genre || 'general')}`,
     '',
     '== DRAFT ==',
-    draft,
+    sanitizeUserText(draft, 100000),
   ].join('\n');
 }
 
@@ -204,16 +223,17 @@ const GENRE_STYLE_TAGS = {
 export function buildCoverPrompt(story = {}) {
   const styleTag =
     GENRE_STYLE_TAGS[story.genre] || 'contemporary editorial illustration, restrained palette';
+  const genre = sanitizeUserText(story.genre || 'general');
   const description = [
     'USER TURN — COVER',
     '',
-    `Describe a cover image for this novel. Return exactly two paragraphs. Paragraph 1 (250–400 words): primary subject, composition, color palette, lighting, and mood for a ${story.genre || 'general'} cover. Must contain no text, lettering, or logos.`,
+    `Describe a cover image for this novel. Return exactly two paragraphs. Paragraph 1 (250–400 words): primary subject, composition, color palette, lighting, and mood for a ${genre} cover. Must contain no text, lettering, or logos.`,
     'Paragraph 2: a single-line style tag for the illustrator, e.g. "high-contrast noir woodcut, ink on cream".',
     '',
     '== STORY ==',
-    `Title: ${story.title || 'Untitled'}`,
-    `Premise: ${story.premise || ''}`,
-    `Tone: ${story.tone || 'neutral'}    Genre: ${story.genre || 'general'}`,
+    `Title: ${sanitizeUserText(story.title || 'Untitled')}`,
+    `Premise: ${sanitizeUserText(story.premise || '')}`,
+    `Tone: ${sanitizeUserText(story.tone || 'neutral')}    Genre: ${genre}`,
   ].join('\n');
   return { description, styleTag };
 }
@@ -226,4 +246,5 @@ export default {
   buildPolishPrompt,
   buildCoverPrompt,
   buildStructurePrompt,
+  sanitizeUserText,
 };
