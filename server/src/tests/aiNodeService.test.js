@@ -328,4 +328,42 @@ describe('aiService generateNode (TICKET-75)', () => {
     expect(eventData(io.events, 'done')).toBeNull();
     expect(eventData(io.events, 'error')).toBeNull();
   });
+
+  it('removes the pre-created draft node when generation is aborted (no orphans)', async () => {
+    textChunks = Array.from({ length: 200 }, (_, i) => `c${i} `);
+    slowChunks = true;
+    const ac = new AbortController();
+    const io = recordingIo();
+    const run = aiService.generateNode(
+      { userId: String(userId), storyId: String(story._id), parentNodeId: String(startNode._id) },
+      { io, signal: ac.signal },
+    );
+    setTimeout(() => ac.abort(), 10);
+    await run;
+    // Only the pre-seeded start node remains; the aborted draft was cleaned up.
+    expect(await BranchNode.countDocuments({ storyId: story._id })).toBe(1);
+  });
+
+  it('removes the draft node when the provider returns no text', async () => {
+    textChunks = [];
+    const io = recordingIo();
+    await aiService.generateNode(
+      { userId: String(userId), storyId: String(story._id), parentNodeId: String(startNode._id) },
+      { io, signal: new AbortController().signal },
+    );
+    expect(eventData(io.events, 'error').code).toBe('AI_UNAVAILABLE');
+    expect(await BranchNode.countDocuments({ storyId: story._id })).toBe(1);
+  });
+
+  it('recomputes story.wordCount from every branch node', async () => {
+    const io = recordingIo();
+    await aiService.generateNode(
+      { userId: String(userId), storyId: String(story._id), parentNodeId: String(startNode._id) },
+      { io, signal: new AbortController().signal },
+    );
+    const expected = await nodeService.computeNodeWordCount(story._id);
+    const fresh = await Story.findById(story._id);
+    expect(fresh.wordCount).toBe(expected);
+    expect(fresh.wordCount).toBeGreaterThan(6);
+  });
 });

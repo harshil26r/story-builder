@@ -72,16 +72,23 @@ function makeRequestSignal(opts) {
 }
 
 function makeMessagesAdapter(genai) {
-  async function create(body) {
+  async function create(body, opts = {}) {
     const systemInstruction = toSystemInstruction(body.system);
-    const res = await genai.models.generateContent({
-      model: body.model,
-      contents: toGeminiContents(body.messages),
-      config: {
-        ...(body.max_tokens ? { maxOutputTokens: body.max_tokens } : {}),
-        ...(systemInstruction ? { systemInstruction } : {}),
-      },
-    });
+    const { requestSignal, cleanup } = makeRequestSignal(opts);
+    let res;
+    try {
+      res = await genai.models.generateContent({
+        model: body.model,
+        contents: toGeminiContents(body.messages),
+        config: {
+          ...(body.max_tokens ? { maxOutputTokens: body.max_tokens } : {}),
+          ...(systemInstruction ? { systemInstruction } : {}),
+          abortSignal: requestSignal,
+        },
+      });
+    } finally {
+      cleanup();
+    }
     const content = (res.candidates || [])
       .flatMap((c) => c.content?.parts || [])
       .filter((p) => p && typeof p.text === 'string')

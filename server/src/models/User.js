@@ -22,7 +22,7 @@ const userSchema = new Schema(
     },
     passwordHash: { type: String, default: null },
     isEmailVerified: { type: Boolean, default: false },
-    googleId: { type: String, default: null, sparse: true },
+    googleId: { type: String, default: null },
     avatarUrl: { type: String, default: null },
     aiUsage: {
       calls: {
@@ -41,6 +41,19 @@ const userSchema = new Schema(
     },
   },
   { timestamps: true },
+);
+
+// A Google account maps to at most one User, but password-only users all keep
+// googleId:null. A plain `unique` (or `sparse`) index would either index every
+// null (duplicate-key on the second password signup) or omit them inconsistently,
+// so uniqueness is scoped to real string IDs via a named partial index.
+userSchema.index(
+  { googleId: 1 },
+  {
+    name: 'googleId_unique_partial',
+    unique: true,
+    partialFilterExpression: { googleId: { $type: 'string' } },
+  },
 );
 
 // Hopeful/heroic hash rounds per SPEC §5.1 ("bcrypt hash(password, 12)")

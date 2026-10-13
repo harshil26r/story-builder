@@ -197,20 +197,29 @@ export async function remove(userId, nodeId, { cascade = true } = {}) {
 
   let orphanedChoices = 0;
   if (cascade) {
+    // Count the edges that will be severed, then sever them in one atomic write
+    // (the previous per-owner load→mutate→save loop raced with concurrent edits
+    // and issued N writes).
     const owners = await BranchNode.find({
       storyId: node.storyId,
       'choices.targetNodeId': node._id,
-    }).exec();
+    })
+      .select('choices.targetNodeId')
+      .lean()
+      .exec();
     for (const owner of owners) {
-      let changed = false;
-      for (const c of owner.choices) {
+      for (const c of owner.choices || []) {
         if (c.targetNodeId && c.targetNodeId.toString() === node._id.toString()) {
-          c.targetNodeId = null;
           orphanedChoices += 1;
-          changed = true;
         }
       }
-      if (changed) await owner.save();
+    }
+    if (orphanedChoices > 0) {
+      await BranchNode.updateMany(
+        { storyId: node.storyId, 'choices.targetNodeId': node._id },
+        { $set: { 'choices.$[edge].targetNodeId': null } },
+        { arrayFilters: [{ 'edge.targetNodeId': node._id }] },
+      ).exec();
     }
   }
 
@@ -260,6 +269,17 @@ export async function removeChoice(userId, nodeId, choiceId) {
   return { ok: true };
 }
 
+// Aggregate word count across every branch node in a story. Linear stories
+// compute this from chapters (storyService.computeWordCount); branching stories
+// have no chapters, so the story's wordCount must sum node content instead.
+export async function computeNodeWordCount(storyId) {
+  const nodes = await BranchNode.find({ storyId }).select('content').lean().exec();
+  return nodes.reduce((sum, n) => {
+    const text = typeof n.content === 'string' ? n.content.trim() : '';
+    return sum + (text ? text.split(/\s+/).length : 0);
+  }, 0);
+}
+
 export default {
   list,
   create,
@@ -267,4 +287,5 @@ export default {
   remove,
   addChoice,
   removeChoice,
+  computeNodeWordCount,
 };

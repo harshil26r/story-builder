@@ -56,8 +56,12 @@ describe('CSRF double-submit middleware (TICKET-14)', () => {
     expect(res.payload.code).toBe('FORBIDDEN');
   });
 
-  it('POST with matching header passes', () => {
-    const token = 'abc-123-secret';
+  it('POST with a matching signed header passes', () => {
+    const mint = fakeReq({ method: 'GET', path: '/api/auth/csrf' });
+    const mintRes = fakeRes();
+    csrfToken(mint, mintRes, () => {});
+    const token = mintRes.payload.csrfToken;
+
     const req = fakeReq({
       cookies: { csrfToken: token },
       headers: { 'x-csrf-token': token },
@@ -66,6 +70,21 @@ describe('CSRF double-submit middleware (TICKET-14)', () => {
     const next = vi.fn();
     csrfProtect(req, res, next);
     expect(next).toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('POST with matching but unsigned/forged tokens returns 403', () => {
+    const token = 'abc-123-secret';
+    const req = fakeReq({
+      cookies: { csrfToken: token },
+      headers: { 'x-csrf-token': token },
+    });
+    const res = fakeRes();
+    const next = vi.fn();
+    csrfProtect(req, res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(403);
+    expect(res.payload.code).toBe('FORBIDDEN');
   });
 
   it('GET requests (non-mutating) pass without a token', () => {

@@ -23,6 +23,15 @@ const relationshipSchema = new Schema(
   { _id: false },
 );
 
+// Mongoose ignores `maxlength` on `[String]` paths (validators run per element,
+// not on the array), so array length is enforced with an explicit validator.
+function maxItems(limit, label) {
+  return {
+    validator: (arr) => !arr || arr.length <= limit,
+    message: `\`${label}\` may have at most ${limit} items.`,
+  };
+}
+
 const characterSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
@@ -30,9 +39,9 @@ const characterSchema = new Schema(
     age: { type: Number, default: null },
     gender: { type: String, trim: true, maxlength: 80, default: '' },
     appearance: { type: String, trim: true, maxlength: 5000, default: '' },
-    personality: { type: [String], maxlength: 12, default: [] },
-    likes: { type: [String], maxlength: 12, default: [] },
-    dislikes: { type: [String], maxlength: 12, default: [] },
+    personality: { type: [String], default: [], validate: maxItems(12, 'personality') },
+    likes: { type: [String], default: [], validate: maxItems(12, 'likes') },
+    dislikes: { type: [String], default: [], validate: maxItems(12, 'dislikes') },
     habits: { type: String, trim: true, maxlength: 2000, default: '' },
     backstory: { type: String, trim: true, maxlength: 5000, default: '' },
     role: {
@@ -43,7 +52,7 @@ const characterSchema = new Schema(
     avatarUrl: { type: String, default: null },
     relationships: { type: [relationshipSchema], default: [] },
     voiceStyle: { type: String, trim: true, maxlength: 500, default: '' },
-    catchphrases: { type: [String], maxlength: 6, default: [] },
+    catchphrases: { type: [String], default: [], validate: maxItems(6, 'catchphrases') },
     arc: { type: String, trim: true, maxlength: 2000, default: '' },
     secretTrait: { type: String, trim: true, maxlength: 2000, default: '' },
     secretRevealChapter: { type: Number, default: null },

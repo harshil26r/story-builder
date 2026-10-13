@@ -152,4 +152,58 @@ describe('Character model (TICKET-32)', () => {
     const idx = indexes.find((i) => i.key && i.key.userId === 1);
     expect(idx).toBeTruthy();
   });
+
+  it('rejects more than 12 personality traits (array validator)', async () => {
+    await expect(
+      Character.create({
+        userId: new mongoose.Types.ObjectId(),
+        name: 'Too Many Traits',
+        personality: Array.from({ length: 13 }, (_, i) => `trait-${i}`),
+      }),
+    ).rejects.toThrow(/personality/);
+  });
+
+  it('allows exactly 12 personality traits (boundary)', async () => {
+    const c = await Character.create({
+      userId: new mongoose.Types.ObjectId(),
+      name: 'Exactly Twelve',
+      personality: Array.from({ length: 12 }, (_, i) => `trait-${i}`),
+    });
+    expect(c.personality).toHaveLength(12);
+    await c.deleteOne();
+  });
+
+  it('rejects more than 6 catchphrases', async () => {
+    await expect(
+      Character.create({
+        userId: new mongoose.Types.ObjectId(),
+        name: 'Chatty',
+        catchphrases: Array.from({ length: 7 }, (_, i) => `phrase-${i}`),
+      }),
+    ).rejects.toThrow(/catchphrases/);
+  });
+
+  it('rejects more than 12 likes and more than 12 dislikes', async () => {
+    const base = { userId: new mongoose.Types.ObjectId(), name: 'Preferential' };
+    await expect(
+      Character.create({ ...base, likes: Array.from({ length: 13 }, (_, i) => `like-${i}`) }),
+    ).rejects.toThrow(/likes/);
+    await expect(
+      Character.create({ ...base, dislikes: Array.from({ length: 13 }, (_, i) => `dislike-${i}`) }),
+    ).rejects.toThrow(/dislikes/);
+  });
+
+  it('allows the array maxima for likes, dislikes and catchphrases (boundary)', async () => {
+    const c = await Character.create({
+      userId: new mongoose.Types.ObjectId(),
+      name: 'At The Limit',
+      likes: Array.from({ length: 12 }, (_, i) => `like-${i}`),
+      dislikes: Array.from({ length: 12 }, (_, i) => `dislike-${i}`),
+      catchphrases: Array.from({ length: 6 }, (_, i) => `phrase-${i}`),
+    });
+    expect(c.likes).toHaveLength(12);
+    expect(c.dislikes).toHaveLength(12);
+    expect(c.catchphrases).toHaveLength(6);
+    await c.deleteOne();
+  });
 });

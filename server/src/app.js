@@ -2,15 +2,31 @@ import express from 'express';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import MongoStore from 'connect-mongo';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import createSessionMiddleware from './config/session.js';
+import cors from './middleware/cors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default async function createApp(mongoUri, options = {}) {
   const { disableRateLimits = false } = options;
+
+  // Refuse to boot in production with the shared dev secret (session fixation
+  // / cookie forgery). Tests and local dev keep the documented fallback.
+  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET must be set when NODE_ENV=production.');
+  }
+
   const app = express();
+
+  // Behind a reverse proxy (nginx/load balancer) the real client IP and the
+  // https scheme arrive via X-Forwarded-*; without this secure cookies are
+  // dropped and rate limiting keys on the proxy IP.
+  if (process.env.NODE_ENV === 'production' || process.env.TRUST_PROXY === 'true') {
+    app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
+  }
+
   // Global kill-switch for rate limiters — used by tests to avoid cross-file
   // singleton exhaustion. All limiters check this module flag (rateLimit.js).
   const rateLimitModule = await import('./middleware/rateLimit.js');
@@ -18,33 +34,19 @@ export default async function createApp(mongoUri, options = {}) {
 
   // Security
   app.use(helmet());
+  app.use(cors);
 
   // Body parsing
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieParser());
 
-  // Session
-  const SEVEN_DAYS = 7 * 24 * 60 * 60;
+  // Session (shared config lives in config/session.js — single source of truth)
   app.use(
-    session({
-      secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
-      name: 'connect.sid',
-      resave: false,
-      saveUninitialized: false,
-      rolling: true,
-      cookie: {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: SEVEN_DAYS * 1000,
-      },
-      store: MongoStore.create({
-        mongoUrl: mongoUri || process.env.MONGO_URI || 'mongodb://127.0.0.1/story-builder',
-        ttl: SEVEN_DAYS,
-        collectionName: 'sessions',
-        autoRemove: 'native',
-      }),
-    }),
+    session(
+      createSessionMiddleware(
+        mongoUri || process.env.MONGO_URI || 'mongodb://127.0.0.1/story-builder',
+      ),
+    ),
   );
 
   // Global rate limit (100/min/IP) — SPEC §7.2
