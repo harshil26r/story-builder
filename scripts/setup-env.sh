@@ -117,6 +117,13 @@ get_mongo_hostport() {
 start_mongo() {
   local host="$1" port="$2" i
   warn "MongoDB not reachable at ${host}:${port}; attempting to start it"
+  if [[ -x "$SCRIPT_DIR/mongo-service.sh" ]]; then
+    "$SCRIPT_DIR/mongo-service.sh" start >/dev/null 2>&1 || true
+  fi
+  if port_open "$port" "$host"; then
+    ok "MongoDB is up at ${host}:${port}"
+    return 0
+  fi
   if has_cmd systemctl; then
     systemctl start mongod >/dev/null 2>&1 || true
     systemctl --user start mongod >/dev/null 2>&1 || true

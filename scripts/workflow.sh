@@ -20,6 +20,7 @@ Usage: scripts/workflow.sh <command> [args...]
   review    [args]   scripts/issue-review.sh     independent review (Gemini 3.8)
   pr        [args]   scripts/pr-create.sh        push branch + open PR
   merge     [args]   scripts/pr-merge.sh         merge PR into main (human-run)
+  mongo     [args]   scripts/mongo-service.sh    start, stop, status, logs for MongoDB
   run       [args]   scripts/run-issue.sh        full lifecycle for one issue
   next      [args]   scripts/run-issue.sh --next next open issue, full lifecycle
   help               Show this help
@@ -40,6 +41,7 @@ case "$cmd" in
   review) exec "$SCRIPT_DIR/issue-review.sh" "$@" ;;
   pr) exec "$SCRIPT_DIR/pr-create.sh" "$@" ;;
   merge) exec "$SCRIPT_DIR/pr-merge.sh" "$@" ;;
+  mongo) exec "$SCRIPT_DIR/mongo-service.sh" "$@" ;;
   run) exec "$SCRIPT_DIR/run-issue.sh" "$@" ;;
   next) exec "$SCRIPT_DIR/run-issue.sh" --next "$@" ;;
   help | -h | --help) usage ;;

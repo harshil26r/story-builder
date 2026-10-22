@@ -113,7 +113,7 @@ never pollute the main checkout. Override with `WORKTREE_ROOT=/path`.
 | Symptom | Fix |
 |---------|-----|
 | `GitHub CLI is not authenticated` | `gh auth login` |
-| `cannot reach MongoDB` | start it (`sudo systemctl start mongod`) or run `setup --no-mongo` |
+| `cannot reach MongoDB` | start it (`npm run mongo:start`, `scripts/mongo-service.sh start`, or `docker compose up -d mongodb`) |
 | `reviewer did not emit a recognised verdict` | inspect `.workflow/reviews/issue-<n>.md`; rerun `review` |
 | Server suites fail: `Cannot find module .../bcrypt_lib.node` | npm ≥ 12 blocked install scripts. The repo's `allowScripts` allowlist covers this; if it drifts, run `npm install-scripts approve --all && npm rebuild`. |
 | A model id is unavailable | `opencode models`; override with `REVIEWER_MODEL=provider/model` or `review --model` |
