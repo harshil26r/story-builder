@@ -10,6 +10,8 @@ An interactive, branching narrative creator built with **React 19**, **TypeScrip
 
 - **Node.js ≥ 20** (npm workspaces monorepo; single root `node_modules`).
 - **MongoDB** running locally (default URI `mongodb://127.0.0.1/story-builder`, override with `MONGO_URI`).
+  - Native service: `npm run mongo:start` (or `systemctl --user start mongod`)
+  - Docker service: `npm run docker:mongo` (or `docker compose up -d mongodb`)
 - **`ANTHROPIC_AUTH_TOKEN`** (Claude). Optional but gated integrations degrade gracefully when absent (see below).
 
 ### Setup
