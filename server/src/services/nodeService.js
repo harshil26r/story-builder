@@ -182,6 +182,10 @@ export async function update(userId, nodeId, patch = {}, baseVersion) {
 export async function remove(userId, nodeId, { cascade = true } = {}) {
   const { node } = await requireOwnedNode(userId, nodeId);
 
+  if (node.isStart) {
+    throw new AppError('CANNOT_DELETE_START_NODE', 'The start node cannot be deleted.', 400);
+  }
+
   const children = await BranchNode.find({ parentId: node._id, storyId: node.storyId })
     .select('_id')
     .lean()
@@ -198,8 +202,6 @@ export async function remove(userId, nodeId, { cascade = true } = {}) {
   let orphanedChoices = 0;
   if (cascade) {
     // Count the edges that will be severed, then sever them in one atomic write
-    // (the previous per-owner load→mutate→save loop raced with concurrent edits
-    // and issued N writes).
     const owners = await BranchNode.find({
       storyId: node.storyId,
       'choices.targetNodeId': node._id,
@@ -219,6 +221,13 @@ export async function remove(userId, nodeId, { cascade = true } = {}) {
         { storyId: node.storyId, 'choices.targetNodeId': node._id },
         { $set: { 'choices.$[edge].targetNodeId': null } },
         { arrayFilters: [{ 'edge.targetNodeId': node._id }] },
+      ).exec();
+    }
+
+    if (children.length > 0) {
+      await BranchNode.updateMany(
+        { parentId: node._id, storyId: node.storyId },
+        { $set: { parentId: null } },
       ).exec();
     }
   }
