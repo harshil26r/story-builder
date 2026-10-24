@@ -242,7 +242,36 @@ export const storyUpdateSchema = Joi.object({
   generationMode: Joi.string().valid(...GENERATION_MODES),
   characterIds: Joi.array().items(id).max(20),
   disclaimerText: Joi.string().trim().max(2000).allow(''),
-  coverImageUrl: Joi.string().trim().max(2000).allow(''),
+  coverImageUrl: Joi.string()
+    .trim()
+    .max(2000)
+    .allow('')
+    .uri({ scheme: ['http', 'https'] })
+    .custom((value, helpers) => {
+      if (!value) return value;
+      try {
+        const url = new URL(value);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          return helpers.error('any.invalid');
+        }
+        if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(url.hostname)) {
+          return helpers.error('any.invalid');
+        }
+        if (
+          /^10\./.test(url.hostname) ||
+          /^192\.168\./.test(url.hostname) ||
+          /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(url.hostname) ||
+          /^169\.254\./.test(url.hostname) ||
+          /^fc00:|^fd[0-9a-f]{2}:|^fe80:/i.test(url.hostname)
+        ) {
+          return helpers.error('any.invalid');
+        }
+      } catch (err) {
+        return helpers.error('any.invalid');
+      }
+      return value;
+    })
+    .messages({ 'any.invalid': 'coverImageUrl must be a public http(s) URL' }),
   isPublic: Joi.boolean(),
   status: Joi.string().valid(...STORY_STATUSES),
   baseVersion: Joi.number().integer().min(-1),

@@ -184,7 +184,33 @@ async function toEpub(story = {}, chapters = []) {
     tocTitle: 'Contents',
     content,
   };
-  if (story.coverImageUrl) options.cover = story.coverImageUrl;
+  if (story.coverImageUrl) {
+    const cover = String(story.coverImageUrl).trim();
+    try {
+      const url = new URL(cover);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        throw new Error('Invalid cover URL');
+      }
+      const hostname = url.hostname.toLowerCase();
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '::1' ||
+        hostname === '0.0.0.0' ||
+        /^10\./.test(hostname) ||
+        /^192\.168\./.test(hostname) ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+        /^169\.254\./.test(hostname) ||
+        /^fc00:|^fd[0-9a-f]{2}:|^fe80:/i.test(hostname)
+      ) {
+        throw new Error('Invalid cover URL');
+      }
+      options.cover = cover;
+    } catch (err) {
+      // Only allow validated public http(s) URLs as covers; skip otherwise
+      // to prevent LFI/SSRF
+    }
+  }
 
   try {
     await new EpubGen(options).promise;
