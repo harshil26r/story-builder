@@ -346,6 +346,7 @@ async function runGeneration({ job, io, story, characters, resumeFrom, persist }
       emitError(io, 'AI_UNAVAILABLE', err instanceof Error ? err.message : 'Stream interrupted.');
       return;
     }
+    if (job.abort.signal.aborted) return;
     fullText += text;
     tokensUsed += used;
     if (stopReason !== 'max_tokens' || !text.trim()) break; // skip empty degenerate overflow rounds

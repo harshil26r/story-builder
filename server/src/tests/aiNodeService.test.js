@@ -15,6 +15,8 @@ let textChunks = [];
 let capturedSignal = null;
 let slowChunks = false;
 
+let abortOnChunkIndex = -1;
+let abortControllerRef = null;
 const fakeClient = {
   messages: {
     stream(body, opts) {
@@ -22,16 +24,26 @@ const fakeClient = {
       capturedSignal = (opts && opts.signal) || null;
       const signal = capturedSignal;
       async function* gen() {
+        let idx = 0;
         for (const chunk of textChunks) {
-          if (slowChunks) await new Promise((r) => setTimeout(r, 1));
-          if (signal && signal.aborted) throw new Error('AbortError');
+          if (abortOnChunkIndex === idx && abortControllerRef) {
+            abortControllerRef.abort();
+          }
+          if (slowChunks && abortOnChunkIndex === -1) await new Promise((r) => setTimeout(r, 1));
+          if (signal && signal.aborted) {
+            break;
+          }
           yield {
             type: 'content_block_delta',
             index: 0,
             delta: { type: 'text_delta', text: chunk },
           };
+          idx += 1;
         }
-        if (slowChunks) await new Promise((r) => setTimeout(r, 1));
+        if (signal && signal.aborted) {
+          return;
+        }
+        if (slowChunks && abortOnChunkIndex === -1) await new Promise((r) => setTimeout(r, 1));
         yield {
           type: 'message_delta',
           delta: { stop_reason: 'end_turn', usage: { output_tokens: 60 } },
@@ -125,6 +137,8 @@ describe('aiService generateNode (TICKET-75)', () => {
   beforeEach(async () => {
     await Story.deleteMany({});
     await BranchNode.deleteMany({});
+    abortOnChunkIndex = -1;
+    abortControllerRef = null;
     streamCalls.length = 0;
     capturedSignal = null;
     slowChunks = false;
@@ -316,14 +330,15 @@ describe('aiService generateNode (TICKET-75)', () => {
 
   it('aborts the stream when the signal fires and emits no done/error', async () => {
     textChunks = Array.from({ length: 200 }, (_, i) => `c${i} `);
-    slowChunks = true;
+    slowChunks = false;
     const ac = new AbortController();
+    abortControllerRef = ac;
+    abortOnChunkIndex = 5;
     const io = recordingIo();
     const run = aiService.generateNode(
       { userId: String(userId), storyId: String(story._id), parentNodeId: String(startNode._id) },
       { io, signal: ac.signal },
     );
-    setTimeout(() => ac.abort(), 10);
     await run;
     expect(eventData(io.events, 'done')).toBeNull();
     expect(eventData(io.events, 'error')).toBeNull();
@@ -331,14 +346,15 @@ describe('aiService generateNode (TICKET-75)', () => {
 
   it('removes the pre-created draft node when generation is aborted (no orphans)', async () => {
     textChunks = Array.from({ length: 200 }, (_, i) => `c${i} `);
-    slowChunks = true;
+    slowChunks = false;
     const ac = new AbortController();
+    abortControllerRef = ac;
+    abortOnChunkIndex = 5;
     const io = recordingIo();
     const run = aiService.generateNode(
       { userId: String(userId), storyId: String(story._id), parentNodeId: String(startNode._id) },
       { io, signal: ac.signal },
     );
-    setTimeout(() => ac.abort(), 10);
     await run;
     // Only the pre-seeded start node remains; the aborted draft was cleaned up.
     expect(await BranchNode.countDocuments({ storyId: story._id })).toBe(1);

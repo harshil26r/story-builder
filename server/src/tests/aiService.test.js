@@ -16,6 +16,8 @@ let emptyFinish = false;
 let capturedSummaryOpts = null;
 let slowSummary = false;
 let summaryAbortController = null; // allows tests to abort exactly when summary starts
+let abortOnChunkIndex = -1;
+let abortControllerRef = null;
 
 const fakeClient = {
   messages: {
@@ -29,17 +31,27 @@ const fakeClient = {
       const signal = capturedSignal;
       async function* gen() {
         if (!emptyFinish) {
+          let idx = 0;
           for (const chunk of textChunks) {
-            if (slowChunks) await new Promise((r) => setTimeout(r, 1));
-            if (signal && signal.aborted) throw new Error('AbortError');
+            if (abortOnChunkIndex === idx && abortControllerRef) {
+              abortControllerRef.abort();
+            }
+            if (slowChunks && abortOnChunkIndex === -1) await new Promise((r) => setTimeout(r, 1));
+            if (signal && signal.aborted) {
+              break;
+            }
             yield {
               type: 'content_block_delta',
               index: 0,
               delta: { type: 'text_delta', text: chunk },
             };
+            idx += 1;
           }
         }
-        if (slowChunks) await new Promise((r) => setTimeout(r, 1));
+        if (signal && signal.aborted) {
+          return;
+        }
+        if (slowChunks && abortOnChunkIndex === -1) await new Promise((r) => setTimeout(r, 1));
         yield {
           type: 'message_delta',
           delta: { stop_reason: 'end_turn', usage: { output_tokens: 100 } },
@@ -109,6 +121,8 @@ describe('aiService generateChapter (TICKET-52)', () => {
   beforeEach(async () => {
     await Story.deleteMany({});
     await Chapter.deleteMany({});
+    abortOnChunkIndex = -1;
+    abortControllerRef = null;
     streamCalls.length = 0;
     streamFailCountdown = 0;
     capturedSignal = null;
@@ -226,15 +240,15 @@ describe('aiService generateChapter (TICKET-52)', () => {
 
   it('aborts the stream when the signal fires and emits no done/error', async () => {
     textChunks = Array.from({ length: 200 }, (_, i) => `c${i} `);
-    slowChunks = true;
+    slowChunks = false;
     const ac = new AbortController();
+    abortControllerRef = ac;
+    abortOnChunkIndex = 5; // abort deterministically mid-stream
     const io = recordingIo();
     const run = aiService.generateChapter(
       { userId: String(userId), storyId: String(story._id), chapterIndex: 1 },
       { io, signal: ac.signal },
     );
-    // Abort while the slow stream is in flight.
-    setTimeout(() => ac.abort(), 10);
     await run;
     expect(eventData(io.events, 'done')).toBeNull();
     expect(eventData(io.events, 'error')).toBeNull();
