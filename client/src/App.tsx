@@ -198,14 +198,7 @@ export default function App() {
           }
         />
         <Route path="/website" element={<WebsitePage />} />
-        <Route
-          path="/explore"
-          element={
-            <AuthGate>
-              <ExplorePage />
-            </AuthGate>
-          }
-        />
+        <Route path="/explore" element={<ExplorePage />} />
         <Route
           path="/create"
           element={
