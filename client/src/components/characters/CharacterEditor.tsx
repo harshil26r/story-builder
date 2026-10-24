@@ -8,12 +8,14 @@ import { CharacterRelationshipsEditor } from './CharacterRelationshipsEditor';
 import { CharacterGroupsEditor } from './CharacterGroupsEditor';
 import { AvatarUploader } from './AvatarUploader';
 import { Spinner } from '../ui/Spinner';
+import { Button } from '../ui/Button';
 import type { CharacterInput } from '../../types/api';
 
 export function CharacterEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const characters = useCharacterStore((s) => s.characters);
+  const status = useCharacterStore((s) => s.status);
   const fetch = useCharacterStore((s) => s.fetch);
   const create = useCharacterStore((s) => s.create);
   const update = useCharacterStore((s) => s.update);
@@ -44,8 +46,18 @@ export function CharacterEditor() {
     }
   };
 
-  if (!isNew && characters.length > 0 && !character) {
-    return <p className="text-slate-400">Character not found.</p>;
+  if (!isNew && !character && status !== 'loading') {
+    return (
+      <div className="mx-auto max-w-md space-y-4 py-10 text-center">
+        <h1 className="text-xl font-semibold text-slate-100">Character not found</h1>
+        <p className="text-sm text-slate-400">
+          We couldn't find that character. It may have been deleted or you don't have access to it.
+        </p>
+        <Button variant="secondary" onClick={() => navigate('/characters')}>
+          Back to characters
+        </Button>
+      </div>
+    );
   }
 
   return (
