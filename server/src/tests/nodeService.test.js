@@ -324,7 +324,12 @@ describe('nodeService (TICKET-71)', () => {
 
   it('remove with cascade=0 and children → 409 HAS_CHILDREN', async () => {
     const story = await branchingStory();
-    const parent = await nodeService.create(userId, story._id, { title: 'Parent', content: 'p' });
+    const start = await nodeService.create(userId, story._id, { title: 'Start', content: 'p' });
+    const parent = await nodeService.create(userId, story._id, {
+      parentId: start._id,
+      title: 'Parent',
+      content: 'p',
+    });
     await nodeService.create(userId, story._id, {
       parentId: parent._id,
       title: 'Kid',
@@ -341,7 +346,12 @@ describe('nodeService (TICKET-71)', () => {
 
   it('remove with cascade=0 and no children deletes → { ok, orphanedChoices: 0 }', async () => {
     const story = await branchingStory();
-    const solo = await nodeService.create(userId, story._id, { title: 'Solo', content: 's' });
+    const start = await nodeService.create(userId, story._id, { title: 'Start', content: 's' });
+    const solo = await nodeService.create(userId, story._id, {
+      parentId: start._id,
+      title: 'Solo',
+      content: 's',
+    });
     const result = await nodeService.remove(userId, solo._id, { cascade: false });
     expect(result.ok).toBe(true);
     expect(result.orphanedChoices).toBe(0);
