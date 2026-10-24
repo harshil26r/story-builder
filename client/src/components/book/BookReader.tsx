@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Chapter, ChapteredStory } from '../../types/domain';
 import { useStoryStore } from '../../store/storyStore';
+import { useAuthStore } from '../../store/authStore';
 import { useUiStore } from '../../store/uiStore';
 import { useGenerationStore } from '../../store/generationStore';
 import { Spinner } from '../ui/Spinner';
@@ -23,6 +24,7 @@ export function BookReader() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const story = useStoryStore((s) => s.current);
+  const authUser = useAuthStore((s) => s.user);
   const status = useStoryStore((s) => s.status);
   const error = useStoryStore((s) => s.error);
   const fetchOne = useStoryStore((s) => s.fetchOne);
@@ -116,7 +118,7 @@ export function BookReader() {
       {stage === 'cover' && (
         <BookCover
           title={story.title}
-          author={story.userId}
+          author={(story as any).authorName || authUser?.name || 'Anonymous'}
           coverImageUrl={story.coverImageUrl}
           genre={story.genre}
           structureType={story.structureType}
