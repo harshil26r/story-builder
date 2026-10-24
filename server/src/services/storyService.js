@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import Story from '../models/Story.js';
 import Chapter from '../models/Chapter.js';
+import Character from '../models/Character.js';
 // BranchNode lands in Phase 9; delete cascades chapters only for now.
 import { AppError, NotFoundError, ConflictError } from '../utils/errors.js';
 
@@ -108,9 +109,29 @@ export async function create(userId, input = {}) {
   // `characterIds` is the API/validation name; domain stores `characters`.
   // Explicitly copy the request's characterIds into story.characters.
   if (Array.isArray(input.characterIds)) {
-    picked.characters = normalizeCharacterIds(input.characterIds);
+    const normalized = normalizeCharacterIds(input.characterIds);
+    if (normalized.length > 0) {
+      const ownedCount = await Character.countDocuments({
+        _id: { $in: normalized },
+        userId,
+      });
+      if (ownedCount !== normalized.length) {
+        throw new AppError('FORBIDDEN', 'One or more characters do not belong to this user.', 403);
+      }
+    }
+    picked.characters = normalized;
   } else if (Array.isArray(picked.characters)) {
-    picked.characters = normalizeCharacterIds(picked.characters);
+    const normalized = normalizeCharacterIds(picked.characters);
+    if (normalized.length > 0) {
+      const ownedCount = await Character.countDocuments({
+        _id: { $in: normalized },
+        userId,
+      });
+      if (ownedCount !== normalized.length) {
+        throw new AppError('FORBIDDEN', 'One or more characters do not belong to this user.', 403);
+      }
+    }
+    picked.characters = normalized;
   }
   const story = await Story.create({
     userId,
@@ -133,9 +154,29 @@ export async function update(userId, id, patch = {}, baseVersion) {
 
   // API/validation name is `characterIds`; domain stores `characters`.
   if (Array.isArray(patch.characterIds)) {
-    safe.characters = normalizeCharacterIds(patch.characterIds);
+    const normalized = normalizeCharacterIds(patch.characterIds);
+    if (normalized.length > 0) {
+      const ownedCount = await Character.countDocuments({
+        _id: { $in: normalized },
+        userId,
+      });
+      if (ownedCount !== normalized.length) {
+        throw new AppError('FORBIDDEN', 'One or more characters do not belong to this user.', 403);
+      }
+    }
+    safe.characters = normalized;
   } else if (Array.isArray(safe.characters)) {
-    safe.characters = normalizeCharacterIds(safe.characters);
+    const normalized = normalizeCharacterIds(safe.characters);
+    if (normalized.length > 0) {
+      const ownedCount = await Character.countDocuments({
+        _id: { $in: normalized },
+        userId,
+      });
+      if (ownedCount !== normalized.length) {
+        throw new AppError('FORBIDDEN', 'One or more characters do not belong to this user.', 403);
+      }
+    }
+    safe.characters = normalized;
   }
 
   const story = await requireOwned(userId, id);
@@ -245,6 +286,15 @@ export async function computeWordCount(storyId) {
 export async function addCharactersCopyIn(userId, id, characterIds) {
   const story = await requireOwned(userId, id);
   const incoming = normalizeCharacterIds(characterIds).map((x) => x.toString());
+  if (incoming.length > 0) {
+    const ownedCount = await Character.countDocuments({
+      _id: { $in: incoming },
+      userId,
+    });
+    if (ownedCount !== incoming.length) {
+      throw new AppError('FORBIDDEN', 'One or more characters do not belong to this user.', 403);
+    }
+  }
   const existing = new Set((story.characters || []).map((x) => x.toString()));
   for (const charId of incoming) {
     if (!existing.has(charId)) {

@@ -63,7 +63,10 @@ function words(text) {
 async function loadExpandedStory(storyId) {
   const story = await Story.findById(storyId);
   if (!story) throw new NotFoundError('Story not found.');
-  const characters = await Character.find({ _id: { $in: story.characters || [] } })
+  const characters = await Character.find({
+    _id: { $in: story.characters || [] },
+    userId: story.userId,
+  })
     .lean()
     .exec();
   return { story, characters: characters.map((c) => ({ ...c, _id: String(c._id) })) };
