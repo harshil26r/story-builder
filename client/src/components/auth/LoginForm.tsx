@@ -64,9 +64,26 @@ export function LoginForm({ onNeedOtp }: LoginFormProps) {
           >
             Password
           </label>
-          <span className="text-xs text-indigo-600 font-medium transition-colors hover:text-indigo-700">
+          <button
+            type="button"
+            className="text-xs font-medium text-indigo-600 transition-colors hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+            onClick={() => {
+              if (!email) {
+                toast.error('Enter your email address to reset your password.');
+                return;
+              }
+              // Navigate to signup/verify flow by triggering OTP reset - use auth store if available
+              try {
+                useAuthStore.getState().sendOtp?.(email, 'reset');
+                toast.success('Password reset code sent to your email.');
+              } catch (err) {
+                toast.error('Unable to send password reset code.');
+              }
+            }}
+            aria-label="Forgot password"
+          >
             Forgot password?
-          </span>
+          </button>
         </div>
         <div className="relative">
           <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
