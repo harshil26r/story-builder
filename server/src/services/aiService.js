@@ -361,6 +361,7 @@ async function runGeneration({ job, io, story, characters, resumeFrom, persist }
   }
 
   job.text = fullText;
+  if (job.abort.signal.aborted) return;
   summary = await generateSummary(fullText || '', { signal: job.abort.signal });
   if (job.abort.signal.aborted) return; // client disconnected during summary — skip commit
   emit(io, 'snapshot', { jobId: job.id, chapterIndex: job.chapterIndex, fullTextSoFar: fullText });
@@ -638,6 +639,7 @@ export async function polishDraft({ userId, storyId, chapterIndex }, { io, signa
     emitError(io, 'AI_UNAVAILABLE', err instanceof Error ? err.message : 'Stream interrupted.');
     return;
   }
+  if (job.abort.signal.aborted) return;
 
   if (!polished.trim()) {
     emitError(
@@ -763,7 +765,9 @@ export async function generateNode({ userId, storyId, parentNodeId }, { io, sign
     }
 
     const content = scene.trim();
+    if (job.abort.signal.aborted) return;
     const summary = await generateSummary(content || '', { signal: job.abort.signal });
+    if (job.abort.signal.aborted) return;
     emit(io, 'snapshot', {
       jobId: job.id,
       chapterIndex: job.chapterIndex,
