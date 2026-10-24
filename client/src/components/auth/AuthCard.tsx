@@ -163,10 +163,10 @@ export function AuthCard({ mode, children }: AuthCardProps) {
         </div>
 
         {/* Bottom subtle copyright */}
-        <div className="flex items-center justify-between border-t border-slate-200/80 pt-4 text-[0.6875rem] text-slate-500">
+        <div className="flex flex-col items-center justify-between gap-2.5 border-t border-slate-200/80 pt-4 text-center text-[0.6875rem] text-slate-500 sm:flex-row sm:gap-0 sm:text-left">
           <span>&copy; {new Date().getFullYear()} Story Builder. All rights reserved.</span>
           <div className="flex gap-3">
-            <Link to="/" className="hover:text-slate-800 transition-colors">
+            <Link to="/explore" className="hover:text-slate-800 transition-colors">
               Explore Books
             </Link>
             <span>&middot;</span>
