@@ -23,8 +23,34 @@ export interface UiState {
   setSettingsOpen(open: boolean): void;
 }
 
+function getInitialDarkMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark') return true;
+    if (stored === 'light') return false;
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+if (typeof document !== 'undefined') {
+  try {
+    const initial = getInitialDarkMode();
+    document.documentElement.classList.toggle('dark', initial);
+  } catch {
+    // ignore
+  }
+}
+
 export const useUiStore = create<UiState>((set) => ({
-  darkMode: false,
+  darkMode: typeof document !== 'undefined'
+    ? document.documentElement.classList.contains('dark')
+    : getInitialDarkMode(),
   readingMode: 'paper',
   readerMode: 'read',
   currentPage: 0,
@@ -32,7 +58,19 @@ export const useUiStore = create<UiState>((set) => ({
   searchOpen: false,
   settingsOpen: false,
 
-  toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
+  toggleDarkMode: () =>
+    set((s) => {
+      const next = !s.darkMode;
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.toggle('dark', next);
+      }
+      try {
+        localStorage.setItem('theme', next ? 'dark' : 'light');
+      } catch {
+        // ignore
+      }
+      return { darkMode: next };
+    }),
   setReadingMode: (mode) => set({ readingMode: mode }),
   setReaderMode: (mode) => set({ readerMode: mode }),
   setCurrentPage: (page) => set({ currentPage: page }),
