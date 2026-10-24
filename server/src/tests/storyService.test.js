@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import mongoose from 'mongoose';
 import Story from '../models/Story.js';
 import Chapter from '../models/Chapter.js';
+import Character from '../models/Character.js';
 import storyService from '../services/storyService.js';
 
 // TICKET-42: storyService — CRUD + optimistic concurrency + publish/share +
@@ -22,6 +23,7 @@ describe('storyService (TICKET-42)', () => {
   afterAll(async () => {
     await Story.deleteMany({});
     await Chapter.deleteMany({});
+    await Character.deleteMany({});
     await mongoose.disconnect();
   });
 
@@ -48,9 +50,13 @@ describe('storyService (TICKET-42)', () => {
   });
 
   it('create copies characterIds into story.characters', async () => {
-    const cId = new mongoose.Types.ObjectId();
-    const s = await storyService.create(userIdA, storyInput({ characterIds: [cId] }));
-    expect(s.characters.map((x) => x.toString())).toContain(cId.toString());
+    const c = await Character.create({
+      userId: userIdA,
+      name: 'Test',
+      role: 'protagonist',
+    });
+    const s = await storyService.create(userIdA, storyInput({ characterIds: [c._id] }));
+    expect(s.characters.map((x) => x.toString())).toContain(c._id.toString());
   });
 
   it('totalChapters is 0 for linear/branching at create (populated on generation)', async () => {
